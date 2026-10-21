@@ -1,9 +1,9 @@
-FROM python:3.14.0-slim-bookworm AS builder
+FROM python:3.14.0-slim-bookworm@sha256:d13fa0424035d290decef3d575cea23d1b7d5952cdf429df8f5542c71e961576 AS builder
 WORKDIR /build
-COPY requirements.txt .
-RUN python -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir pip==26.2.2 && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+COPY requirements.lock .
+RUN python -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir --require-hashes -r requirements.lock
 
-FROM python:3.14.0-slim-bookworm
+FROM python:3.14.0-slim-bookworm@sha256:d13fa0424035d290decef3d575cea23d1b7d5952cdf429df8f5542c71e961576
 ENV PATH="/opt/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN addgroup --system path && adduser --system --ingroup path --home /app path
 WORKDIR /app

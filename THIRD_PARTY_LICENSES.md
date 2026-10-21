@@ -1,43 +1,15 @@
 # Third-party license inventory
 
-P.A.T.H. uses the MIT license because it is short, permissive, and compatible with the permissive licenses used by the direct runtime dependencies below. This inventory covers direct dependencies; CI should regenerate/verify the full transitive inventory before each release using `pip-licenses` and the npm lockfile.
+Full transitive inventories, including development dependencies:
 
-## Python runtime
+- [Python](docs/licenses/python.json), generated with pip-licenses.
+- [npm](docs/licenses/npm.json), generated with license-checker.
 
-| Package | License family |
-|---|---|
-| FastAPI | MIT |
-| Uvicorn | BSD-3-Clause |
-| PyMongo | Apache-2.0 |
-| Pydantic / pydantic-settings | MIT |
-| PyJWT | MIT |
-| argon2-cffi | MIT |
-| NumPy | BSD-3-Clause |
-| SciPy | BSD-3-Clause |
-| scikit-learn | BSD-3-Clause |
-| redis-py | MIT |
-| python-json-logger | BSD-2-Clause |
-| umap-learn | BSD-3-Clause |
+Run `python scripts/check_licenses.py` to reject unapproved GPL/AGPL entries.
+The version-specific allowlist is `docs/licenses/allowlist.json` and is currently
+empty. Inventory review is required before release; this is not legal advice.
 
-## Frontend/runtime and tooling
-
-| Package | License family |
-|---|---|
-| React / React DOM | MIT |
-| React Router | MIT |
-| Vite / Vitest | MIT |
-| Tailwind CSS | MIT |
-| ESLint and plugins | MIT |
-| Prettier | MIT |
-| Testing Library | MIT |
-| MSW | MIT |
-| Playwright | Apache-2.0 |
-
-No direct dependency listed above introduces GPL/AGPL reciprocal terms. This is a software inventory, not legal advice; release owners must review the generated transitive report and organizational policy.
-
-Generation commands:
-
-```bash
-pip-licenses --format=markdown --with-urls --with-license-file --no-license-path
-npm query ':root > *' --json
-```
+Regenerate from the locked environment with `pip-licenses --format=json --with-urls
+--output-file=docs/licenses/python.json` and `cd frontend && npx license-checker
+--json > ../docs/licenses/npm.json`. Remove local filesystem paths from the npm
+report before committing.

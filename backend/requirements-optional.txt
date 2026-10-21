@@ -1,1 +1,2 @@
-umap-learn==0.5.7
+# UMAP is included and pinned in requirements.lock.
+-r requirements.lock

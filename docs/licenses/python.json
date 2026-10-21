@@ -1,0 +1,590 @@
+[
+  {
+    "License": "UNKNOWN",
+    "Name": "CacheControl",
+    "URL": "https://pypi.org/project/CacheControl/",
+    "Version": "0.14.4"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "PyJWT",
+    "URL": "https://github.com/jpadilla/pyjwt",
+    "Version": "2.15.1"
+  },
+  {
+    "License": "MIT License",
+    "Name": "PyYAML",
+    "URL": "https://pyyaml.org/",
+    "Version": "6.0.3"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "Pygments",
+    "URL": "https://pygments.org",
+    "Version": "2.21.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "annotated-doc",
+    "URL": "https://github.com/fastapi/annotated-doc",
+    "Version": "0.0.5"
+  },
+  {
+    "License": "MIT License",
+    "Name": "annotated-types",
+    "URL": "https://github.com/annotated-types/annotated-types",
+    "Version": "0.8.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "anyio",
+    "URL": "https://anyio.readthedocs.io/en/stable/versionhistory.html",
+    "Version": "4.15.1"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "argon2-cffi",
+    "URL": "https://github.com/hynek/argon2-cffi/blob/main/CHANGELOG.md",
+    "Version": "25.1.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "argon2-cffi-bindings",
+    "URL": "https://github.com/hynek/argon2-cffi-bindings/blob/main/CHANGELOG.md",
+    "Version": "26.1.0"
+  },
+  {
+    "License": "BSD-2-Clause",
+    "Name": "boolean.py",
+    "URL": "https://github.com/bastikr/boolean.py",
+    "Version": "5.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "build",
+    "URL": "https://build.pypa.io",
+    "Version": "1.6.1"
+  },
+  {
+    "License": "Mozilla Public License 2.0 (MPL 2.0)",
+    "Name": "certifi",
+    "URL": "https://github.com/certifi/python-certifi",
+    "Version": "2026.10.19"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "cffi",
+    "URL": "https://cffi.readthedocs.io/en/latest/whatsnew.html",
+    "Version": "2.1.1"
+  },
+  {
+    "License": "MIT",
+    "Name": "cfgv",
+    "URL": "https://github.com/asottile/cfgv",
+    "Version": "3.5.0"
+  },
+  {
+    "License": "MIT",
+    "Name": "charset-normalizer",
+    "URL": "https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md",
+    "Version": "3.5.2"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "click",
+    "URL": "https://github.com/pallets/click/",
+    "Version": "8.5.0"
+  },
+  {
+    "License": "BSD License",
+    "Name": "cloudpickle",
+    "URL": "https://github.com/cloudpipe/cloudpickle",
+    "Version": "3.1.2"
+  },
+  {
+    "License": "BSD License",
+    "Name": "colorama",
+    "URL": "https://github.com/tartley/colorama",
+    "Version": "0.4.6"
+  },
+  {
+    "License": "Apache-2.0",
+    "Name": "coverage",
+    "URL": "https://github.com/coveragepy/coveragepy",
+    "Version": "7.16.2"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "cyclonedx-python-lib",
+    "URL": "https://github.com/CycloneDX/cyclonedx-python-lib/#readme",
+    "Version": "9.1.0"
+  },
+  {
+    "License": "Python Software Foundation License",
+    "Name": "defusedxml",
+    "URL": "https://github.com/tiran/defusedxml",
+    "Version": "0.7.1"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "detect-secrets",
+    "URL": "https://github.com/Yelp/detect-secrets",
+    "Version": "1.5.0"
+  },
+  {
+    "License": "Python Software Foundation License",
+    "Name": "distlib",
+    "URL": "https://github.com/pypa/distlib",
+    "Version": "0.4.4"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "dnspython",
+    "URL": "https://www.dnspython.org",
+    "Version": "2.9.0"
+  },
+  {
+    "License": "The Unlicense (Unlicense)",
+    "Name": "email-validator",
+    "URL": "https://github.com/JoshData/python-email-validator",
+    "Version": "2.3.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "fastapi",
+    "URL": "https://github.com/fastapi/fastapi",
+    "Version": "0.142.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "filelock",
+    "URL": "https://github.com/tox-dev/py-filelock",
+    "Version": "4.2.4"
+  },
+  {
+    "License": "MIT License",
+    "Name": "h11",
+    "URL": "https://github.com/python-hyper/h11",
+    "Version": "0.16.0"
+  },
+  {
+    "License": "BSD License",
+    "Name": "httpcore",
+    "URL": "https://www.encode.io/httpcore/",
+    "Version": "1.0.9"
+  },
+  {
+    "License": "BSD License",
+    "Name": "httpcore2",
+    "URL": "https://github.com/pydantic/httpx2",
+    "Version": "2.16.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "httptools",
+    "URL": "https://github.com/MagicStack/httptools",
+    "Version": "0.9.0"
+  },
+  {
+    "License": "BSD License",
+    "Name": "httpx",
+    "URL": "https://github.com/encode/httpx",
+    "Version": "0.28.1"
+  },
+  {
+    "License": "BSD License",
+    "Name": "httpx2",
+    "URL": "https://github.com/pydantic/httpx2",
+    "Version": "2.16.0"
+  },
+  {
+    "License": "MIT",
+    "Name": "identify",
+    "URL": "https://github.com/pre-commit/identify",
+    "Version": "2.6.20"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "idna",
+    "URL": "https://github.com/kjd/idna",
+    "Version": "3.20"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "iniconfig",
+    "URL": "https://github.com/pytest-dev/iniconfig",
+    "Version": "2.3.1"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "joblib",
+    "URL": "https://joblib.readthedocs.io",
+    "Version": "1.6.0"
+  },
+  {
+    "License": "Apache-2.0",
+    "Name": "license-expression",
+    "URL": "https://github.com/aboutcode-org/license-expression",
+    "Version": "30.4.4"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "llvmlite",
+    "URL": "http://llvmlite.readthedocs.io",
+    "Version": "0.50.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "markdown-it-py",
+    "URL": "https://github.com/executablebooks/markdown-it-py",
+    "Version": "4.2.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "mdurl",
+    "URL": "https://github.com/executablebooks/mdurl",
+    "Version": "0.1.2"
+  },
+  {
+    "License": "ISC License (ISCL)",
+    "Name": "mongomock",
+    "URL": "https://github.com/mongomock/mongomock",
+    "Version": "4.3.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "msgpack",
+    "URL": "https://msgpack.org/",
+    "Version": "1.2.3"
+  },
+  {
+    "License": "MIT License",
+    "Name": "mypy",
+    "URL": "https://www.mypy-lang.org/",
+    "Version": "1.18.2"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "mypy_extensions",
+    "URL": "https://github.com/python/mypy_extensions",
+    "Version": "1.1.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "narwhals",
+    "URL": "https://github.com/narwhals-dev/narwhals",
+    "Version": "2.27.1"
+  },
+  {
+    "License": "BSD License",
+    "Name": "nodeenv",
+    "URL": "https://github.com/ekalinin/nodeenv",
+    "Version": "1.11.0"
+  },
+  {
+    "License": "BSD License",
+    "Name": "numba",
+    "URL": "https://numba.pydata.org",
+    "Version": "0.68.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "numpy",
+    "URL": "https://numpy.org",
+    "Version": "2.5.4"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "opentelemetry-api",
+    "URL": "https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-api",
+    "Version": "1.45.1"
+  },
+  {
+    "License": "MIT License",
+    "Name": "packageurl-python",
+    "URL": "https://github.com/package-url/packageurl-python",
+    "Version": "0.17.6"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "packaging",
+    "URL": "https://github.com/pypa/packaging",
+    "Version": "26.3"
+  },
+  {
+    "License": "Mozilla Public License 2.0 (MPL 2.0)",
+    "Name": "pathspec",
+    "URL": "UNKNOWN",
+    "Version": "1.1.1"
+  },
+  {
+    "License": "MIT",
+    "Name": "pip-requirements-parser",
+    "URL": "https://github.com/nexB/pip-requirements-parser",
+    "Version": "32.0.1"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pip-tools",
+    "URL": "https://github.com/jazzband/pip-tools/",
+    "Version": "7.6.2"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "pip_api",
+    "URL": "https://pypi.org/project/pip-api/",
+    "Version": "0.0.35"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "pip_audit",
+    "URL": "https://pypi.org/project/pip-audit/",
+    "Version": "2.9.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "platformdirs",
+    "URL": "https://github.com/tox-dev/platformdirs",
+    "Version": "4.13.5"
+  },
+  {
+    "License": "MIT License",
+    "Name": "pluggy",
+    "URL": "https://github.com/pytest-dev/pluggy",
+    "Version": "1.7.0"
+  },
+  {
+    "License": "MIT",
+    "Name": "pre_commit",
+    "URL": "https://github.com/pre-commit/pre-commit",
+    "Version": "4.3.0"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "py-serializable",
+    "URL": "https://github.com/madpah/serializable#readme",
+    "Version": "2.1.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pycparser",
+    "URL": "https://github.com/eliben/pycparser",
+    "Version": "3.11"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pydantic",
+    "URL": "https://github.com/pydantic/pydantic",
+    "Version": "2.12.3"
+  },
+  {
+    "License": "MIT License",
+    "Name": "pydantic-settings",
+    "URL": "https://github.com/pydantic/pydantic-settings",
+    "Version": "2.16.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pydantic_core",
+    "URL": "https://github.com/pydantic/pydantic-core",
+    "Version": "2.41.4"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pymongo",
+    "URL": "https://www.mongodb.org",
+    "Version": "4.19.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pynndescent",
+    "URL": "http://github.com/lmcinnes/pynndescent",
+    "Version": "0.6.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pyparsing",
+    "URL": "https://github.com/pyparsing/pyparsing/",
+    "Version": "3.3.3"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "pyproject_hooks",
+    "URL": "https://github.com/pypa/pyproject-hooks",
+    "Version": "1.3.3"
+  },
+  {
+    "License": "MIT License",
+    "Name": "pytest",
+    "URL": "https://docs.pytest.org/en/latest/",
+    "Version": "8.4.2"
+  },
+  {
+    "License": "MIT License",
+    "Name": "pytest-cov",
+    "URL": "https://pytest-cov.readthedocs.io/en/latest/changelog.html",
+    "Version": "7.0.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "python-discovery",
+    "URL": "https://github.com/tox-dev/python-discovery",
+    "Version": "1.6.4"
+  },
+  {
+    "License": "BSD-3-Clause",
+    "Name": "python-dotenv",
+    "URL": "https://github.com/theskumar/python-dotenv",
+    "Version": "1.2.4"
+  },
+  {
+    "License": "BSD License",
+    "Name": "python-json-logger",
+    "URL": "https://nhairs.github.io/python-json-logger",
+    "Version": "4.0.0"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "python-multipart",
+    "URL": "https://github.com/Kludex/python-multipart",
+    "Version": "0.0.32"
+  },
+  {
+    "License": "MIT License",
+    "Name": "pytz",
+    "URL": "http://pythonhosted.org/pytz",
+    "Version": "2026.5"
+  },
+  {
+    "License": "MIT License",
+    "Name": "redis",
+    "URL": "https://github.com/redis/redis-py",
+    "Version": "6.4.0"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "requests",
+    "URL": "https://github.com/psf/requests",
+    "Version": "2.34.2"
+  },
+  {
+    "License": "MIT License",
+    "Name": "rich",
+    "URL": "https://github.com/Textualize/rich",
+    "Version": "15.0.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "ruff",
+    "URL": "https://docs.astral.sh/ruff",
+    "Version": "0.14.2"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "scikit-learn",
+    "URL": "https://scikit-learn.org",
+    "Version": "1.9.1"
+  },
+  {
+    "License": "BSD License",
+    "Name": "scipy",
+    "URL": "https://scipy.org/",
+    "Version": "1.18.1"
+  },
+  {
+    "License": "BSD 3-Clause License",
+    "Name": "sentinels",
+    "URL": "https://github.com/vmalloc/sentinels",
+    "Version": "1.1.1"
+  },
+  {
+    "License": "Apache Software License",
+    "Name": "sortedcontainers",
+    "URL": "http://www.grantjenks.com/docs/sortedcontainers/",
+    "Version": "2.4.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "starlette",
+    "URL": "https://github.com/Kludex/starlette",
+    "Version": "1.9.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "threadpoolctl",
+    "URL": "https://github.com/joblib/threadpoolctl",
+    "Version": "3.7.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "toml",
+    "URL": "https://github.com/uiri/toml",
+    "Version": "0.10.2"
+  },
+  {
+    "License": "MPL-2.0 AND MIT",
+    "Name": "tqdm",
+    "URL": "https://tqdm.github.io",
+    "Version": "4.70.1"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "truststore",
+    "URL": "https://github.com/sethmlarson/truststore",
+    "Version": "0.10.5"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "typing-inspection",
+    "URL": "https://github.com/pydantic/typing-inspection",
+    "Version": "0.4.4"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "typing_extensions",
+    "URL": "https://github.com/python/typing_extensions",
+    "Version": "4.16.0"
+  },
+  {
+    "License": "BSD",
+    "Name": "umap-learn",
+    "URL": "http://github.com/lmcinnes/umap",
+    "Version": "0.5.9.post2"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "urllib3",
+    "URL": "https://github.com/urllib3/urllib3/blob/main/CHANGES.rst",
+    "Version": "2.8.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "uv",
+    "URL": "https://pypi.org/project/uv/",
+    "Version": "0.13.4"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "uvicorn",
+    "URL": "https://uvicorn.dev/",
+    "Version": "0.53.0"
+  },
+  {
+    "License": "MIT License",
+    "Name": "virtualenv",
+    "URL": "https://github.com/pypa/virtualenv",
+    "Version": "21.14.12"
+  },
+  {
+    "License": "MIT License",
+    "Name": "watchfiles",
+    "URL": "https://github.com/samuelcolvin/watchfiles",
+    "Version": "1.3.0"
+  },
+  {
+    "License": "UNKNOWN",
+    "Name": "websockets",
+    "URL": "https://github.com/python-websockets/websockets",
+    "Version": "17.3"
+  }
+]
