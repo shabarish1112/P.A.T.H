@@ -1,0 +1,50 @@
+services:
+  mongo:
+    image: mongo:8.2.1
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: path
+    volumes:
+    - mongo-data:/data/db
+    - ./infra/mongo-init:/docker-entrypoint-initdb.d:ro
+    ports:
+    - 127.0.0.1:27017:27017
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - mongosh --quiet --username "$$MONGO_ROOT_USER" --password "$$MONGO_ROOT_PASSWORD"
+        --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    env_file:
+    - path: infra/mongo.env
+      required: false
+    entrypoint:
+    - /bin/sh
+    - -ec
+    - export MONGO_INITDB_ROOT_USERNAME="$$MONGO_ROOT_USER" MONGO_INITDB_ROOT_PASSWORD="$$MONGO_ROOT_PASSWORD";
+      exec docker-entrypoint.sh "$$@"
+    - --
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+    - path: ${BACKEND_ENV_FILE:-backend/.env}
+      required: false
+    environment:
+      ENVIRONMENT: development
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+    - 127.0.0.1:8000:8000
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+    - backend
+    ports:
+    - 127.0.0.1:5173:8080
+volumes:
+  mongo-data: null

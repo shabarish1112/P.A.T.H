@@ -1,0 +1,33 @@
+services:
+  mongo:
+    image: mongo:8.2.1
+    environment:
+      MONGO_INITDB_DATABASE: path
+    volumes:
+    - ./infra/mongo-init:/docker-entrypoint-initdb.d:ro
+    env_file:
+    - path: infra/mongo.env
+      required: false
+    entrypoint:
+    - /bin/sh
+    - -ec
+    - export MONGO_INITDB_ROOT_USERNAME="$$MONGO_ROOT_USER" MONGO_INITDB_ROOT_PASSWORD="$$MONGO_ROOT_PASSWORD";
+      exec docker-entrypoint.sh "$$@"
+    - --
+  backend:
+    build: ./backend
+    environment:
+      ENVIRONMENT: test
+    depends_on:
+    - mongo
+    ports:
+    - 8000:8000
+    env_file:
+    - path: ${BACKEND_ENV_FILE:-backend/.env}
+      required: false
+  frontend:
+    build: ./frontend
+    depends_on:
+    - backend
+    ports:
+    - 5173:8080

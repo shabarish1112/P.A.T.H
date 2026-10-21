@@ -1,0 +1,92 @@
+services:
+  mongo:
+    image: mongo:8.2.1
+    restart: unless-stopped
+    command:
+    - mongod
+    - --auth
+    - --tlsMode
+    - requireTLS
+    - --tlsCertificateKeyFile
+    - /run/tls/mongo.pem
+    - --tlsCAFile
+    - /run/tls/ca.pem
+    environment:
+      MONGO_INITDB_DATABASE: path
+    volumes:
+    - mongo-prod:/data/db
+    - ./infra/mongo-init:/docker-entrypoint-initdb.d:ro
+    - ./secrets/tls:/run/tls:ro
+    networks:
+    - private
+    env_file:
+    - path: infra/mongo.env
+      required: false
+    entrypoint:
+    - /bin/sh
+    - -ec
+    - export MONGO_INITDB_ROOT_USERNAME="$$MONGO_ROOT_USER" MONGO_INITDB_ROOT_PASSWORD="$$MONGO_ROOT_PASSWORD";
+      exec docker-entrypoint.sh "$$@"
+    - --
+  redis:
+    image: redis:8.2.2-alpine
+    command:
+    - /bin/sh
+    - -ec
+    - exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+    restart: unless-stopped
+    networks:
+    - private
+    env_file:
+    - path: infra/redis.env
+      required: false
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+    - path: ${BACKEND_ENV_FILE:-backend/.env}
+      required: false
+    environment:
+      ENVIRONMENT: production
+      DOCS_ENABLED: 'false'
+      CACHE_BACKEND: redis
+      MONGO_TLS_CA_FILE: /run/tls/ca.pem
+      MONGO_TLS_CERT_KEY_FILE: /run/tls/app.pem
+    volumes:
+    - ./secrets/tls:/run/tls:ro
+    depends_on:
+    - mongo
+    - redis
+    networks:
+    - private
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ''
+    restart: unless-stopped
+    networks:
+    - private
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+    - 80:80
+    - 443:443
+    volumes:
+    - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    - caddy-data:/data
+    - caddy-config:/config
+    depends_on:
+    - frontend
+    - backend
+    networks:
+    - private
+networks:
+  private: null
+volumes:
+  mongo-prod: null
+  caddy-data: null
+  caddy-config: null

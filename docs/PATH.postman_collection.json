@@ -1,0 +1,56 @@
+{
+  "info": {
+    "name": "P.A.T.H. API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "transactionId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+        "body": { "mode": "urlencoded", "urlencoded": [{ "key": "username", "value": "{{email}}" }, { "key": "password", "value": "{{password}}", "type": "text" }] },
+        "url": "{{baseUrl}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Me",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": "{{baseUrl}}/api/auth/me"
+      }
+    },
+    {
+      "name": "Transactions",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": "{{baseUrl}}/api/transactions?limit=50"
+      }
+    },
+    {
+      "name": "Run model",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"model\":\"if\",\"top_k\":50,\"n_estimators\":200,\"random_state\":42,\"include_umap\":false}" },
+        "url": "{{baseUrl}}/api/models/run"
+      }
+    },
+    {
+      "name": "Review transaction",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"status\":\"Pending Review\",\"note\":\"Reviewed against source records.\"}" },
+        "url": "{{baseUrl}}/api/reviews/{{transactionId}}"
+      }
+    }
+  ]
+}
