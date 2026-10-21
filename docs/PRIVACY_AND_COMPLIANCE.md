@@ -18,11 +18,21 @@ RBAC separates analyst, reviewer, and admin privileges. Dataset mutation, user a
 
 ## Retention and deletion
 
-- Inactive dataset versions: `DATA_RETENTION_DAYS` (default 365) and never the active version during automatic startup retention cleanup.
+- Inactive dataset versions: `DATA_RETENTION_DAYS` (default 365), checked at startup
+  and daily under a Mongo lease. The active dataset is retained. Deletion cascades
+  to transactions, anomalies, associated model runs and reviews/notes tied to those
+  runs. Orphaned active-run pointers are removed. Deletion counts are logged.
 - Audit events: `AUDIT_RETENTION_DAYS` via Mongo TTL.
 - Refresh tokens and login counters: TTL indexes based on expiry.
 
 Organizations should shorten/extend these only after documented legal/operational review.
+
+Request logs contain a user ID, validated/generated request ID, route, method,
+latency and status; they do not include user emails, passwords or tokens. Identity
+emails remain in authorized audit records for accountability, not routine request
+logs. Audit history is append/read-only for the app identity; MongoDB TTL expiry
+is operated by the database, not an application delete permission. Administrative
+operators remain privileged and require separate organizational access controls.
 
 ## Security safeguards
 

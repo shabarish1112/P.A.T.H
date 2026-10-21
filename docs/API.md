@@ -32,3 +32,19 @@ Standard error body:
 ```
 
 Common status codes: 401 unauthenticated, 403 role denied, 404 resource missing, 409 state conflict, 413 upload too large, 422 validation error, 429 login lockout.
+
+## Session and password endpoints
+
+| Endpoint | Role | Behavior |
+|---|---|---|
+| POST /api/auth/change-password | Any authenticated user | Current password required; new password 12-128 characters; invalidates sessions; sign in again |
+| POST /api/users/{user_id}/reset-password | Admin | Resets another user; revokes sessions; forces change at next login |
+| PATCH /api/users/{user_id} | Admin | Role/active changes revoke sessions; self-demotion and last-admin removal return 409 |
+
+Auth user responses now include `must_change_password`. Reset users can access only
+auth/me, auth/change-password and auth/logout until changed. Refresh replay returns
+401, revokes sessions and writes an audit event. Upload row and model row bounds
+return 413. Invalid request IDs are replaced with generated IDs.
+
+OpenAPI defines OAuth2 password bearer security. Login uses form fields `username`
+(email) and `password`; refresh uses the HttpOnly cookie, not a body token.

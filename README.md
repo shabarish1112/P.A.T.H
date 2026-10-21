@@ -13,108 +13,83 @@ P.A.T.H. is a research-grade anomaly-screening platform for public-fund disbursa
 
 ## Docker quick start
 
-### Windows (PowerShell)
+Supported series: Python **3.14.x**, Node **24.x**, MongoDB **8.2.x** and Docker
+Engine 27+ / Compose v2.24+. Dockerfiles pin exact image digests; Python locks pin
+all artifacts with hashes. The local permission smoke also ran against MongoDB
+8.3.2; the container and TLS checks must still pass on the deployment target.
 
-Open Docker Desktop and wait for the engine to start. In PowerShell, run:
+On Windows generate private configuration with:
 
 ```powershell
-cd C:\Users\shaba\Desktop\PATH
-powershell -NoProfile -ExecutionPolicy Bypass -File .\setup-dev.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup-dev.ps1 -Docker
+```
+
+Otherwise copy `infra/mongo.env.example` to `infra/mongo.env` and `backend/.env.example`
+to `backend/.env`. Generate unique random secrets and match the app password in the
+backend URI to `PATH_APP_PASSWORD`; use host `mongo` and `HOST=0.0.0.0` in Docker.
+Only Mongo receives its root credentials. Then:
+
+```bash
 docker compose up --build -d
 docker compose exec backend python scripts/create_user.py --email you@example.com --role admin
 ```
 
-Use your own email and choose a password of at least 12 characters when prompted.
-Open <http://localhost:5173>. The setup script creates both environment files with
-matching, randomly generated local credentials and stops if either file already
-exists. It is intended for a fresh local database. Keep `.env` files private.
-With Docker, you do not need to install Python or Node dependencies on Windows.
-
-To view startup errors: `docker compose logs --tail=100 backend frontend mongo`.
-To stop the project without deleting data: `docker compose stop`.
-
-### Other platforms / manual configuration
-
-1. Copy `.env.example` to `.env` manually.
-2. Replace every example credential with a unique secret. Generate the JWT secret with `openssl rand -hex 32`.
-3. Run:
-
-```bash
-docker compose up --build
-```
-
-4. Create the first admin from the backend container:
-
-```bash
-docker compose exec backend python scripts/create_user.py --email you@example.com --role admin
-```
-
-5. Open `http://localhost:5173`.
-
-No default account is shipped with the project.
+Choose a password of 12-128 characters at the private prompt. Open
+<http://localhost:5173>. No default user is shipped. Never distribute environment
+files or data directories. Read [secret rotation](docs/SECRET_ROTATION.md) before
+reusing a shared archive. Existing volumes need a privileged role migration; merely
+changing initialization environment variables does not change database users.
 
 ## Manual quick start
 
-On Windows with dependencies installed and the environment files configured,
-double-click `start_path.bat` or run `powershell -NoProfile -ExecutionPolicy Bypass -File .\start-local.ps1`.
-This starts the installed `mongod`, backend and frontend locally without Docker,
-keeps MongoDB authentication enabled, and checks backend database readiness.
-MongoDB data and process logs are kept in the ignored `.local/` folder.
-The dedicated local database is separate from Docker's database volume; use one
-startup method at a time. Create your first application account using the command below.
+On Windows run `setup-dev.ps1` without `-Docker`, then:
 
-### Backend
-
-```bash
+```powershell
 cd backend
 python -m venv .venv
-# Windows: .venv\Scripts\activate
-# Linux/macOS: source .venv/bin/activate
-pip install -r requirements-dev.txt
-```
-
-Create `backend/.env` from `backend/.env.example`, replace example values, then:
-
-```bash
-python scripts/create_user.py --email you@example.com --role admin
-uvicorn app.main:app --reload --port 8000
-```
-
-### Frontend
-
-```bash
-cd frontend
+.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-dev.lock
+cd ..\frontend
 npm ci
-npm run dev
+cd ..
+.\start_path.bat
 ```
 
-The Vite development server proxies `/api` and `/health` to `127.0.0.1:8000` when `VITE_API_URL` is empty.
+The launcher needs `mongod` on PATH, starts an authenticated loopback database and
+checks readiness. From `backend/`, create the first admin using the command above
+with `.venv\Scripts\python.exe` instead of `docker compose exec backend python`.
+For Linux/macOS use `.venv/bin/python`, start Mongo with authentication and provision
+the custom role with `scripts/provision_mongo.py` as a DB administrator. Start the
+API with `python -m app.run` from `backend/`, then `npm run dev` from `frontend/`.
+Vite proxies `/api` and `/health` to port 8000. Use only one startup method at a time.
 
-## Environment variables
+## Environment matrix
 
-| Name | Required | Default | Description |
-|---|---:|---|---|
-| `MONGO_URI` | yes | none | Authenticated MongoDB URI. Required at process start. |
-| `MONGO_DB` | no | `path` | Application database. |
-| `JWT_SECRET` | yes | none | Minimum 32-char signing secret; no code fallback exists. |
-| `JWT_ALGORITHM` | no | `HS256` | JWT signing algorithm. |
-| `ACCESS_TOKEN_MINUTES` | no | `15` | Access-token lifetime. |
-| `REFRESH_TOKEN_DAYS` | no | `7` | Rotating refresh-token lifetime. |
-| `CORS_ORIGINS` | no | `http://localhost:5173` | Comma-separated explicit origins. |
-| `DOCS_ENABLED` | no | `true` | OpenAPI/Swagger availability outside production. |
-| `MAX_UPLOAD_MB` | no | `25` | Upload hard limit enforced during streaming. |
-| `DATA_RETENTION_DAYS` | no | `365` | Retention for inactive dataset versions. |
-| `AUDIT_RETENTION_DAYS` | no | `365` | Audit TTL retention. |
-| `CACHE_BACKEND` | no | `memory` | `memory` or `redis`. |
-| `CACHE_TTL_SECONDS` | no | `30` | Analytics cache TTL. |
-| `REDIS_URL` | if Redis | none | Required when `CACHE_BACKEND=redis`. |
-| `ML_N_JOBS` | no | `1` | Isolation Forest CPU parallelism. |
-| `ML_UMAP_MAX_ROWS` | no | `5000` | Maximum UMAP sample rows. |
-| `MONGO_TLS_CA_FILE` | prod TLS | none | Mongo CA bundle. |
-| `MONGO_TLS_CERT_KEY_FILE` | prod TLS | none | Application client cert/key PEM. |
-| `VITE_API_URL` | no | empty | Frontend API origin; empty uses same-origin/proxy. |
+| Variable | File | Consumed by | Required | Description |
+|---|---|---|---|---|
+| MONGO_ROOT_USER / MONGO_ROOT_PASSWORD | infra/mongo.env | Mongo only | yes | Bootstrap admin; never passed to backend |
+| PATH_APP_USER / PATH_APP_PASSWORD | infra/mongo.env | Mongo only | yes | Custom application-role identity |
+| MONGO_URI | backend/.env | Backend | yes | Authenticated least-privilege app URI; URL-encode passwords |
+| JWT_SECRET | backend/.env | Backend | yes | At least 32 random bytes; rotate exposed keys |
+| MONGO_DB / ENVIRONMENT / DOCS_ENABLED | backend/.env | Backend | no | Database and environment; production docs disabled |
+| HOST / WORKERS | backend/.env | Uvicorn | no | Default 127.0.0.1 / 1; Docker binds all interfaces privately |
+| FORWARDED_ALLOW_IPS | backend/.env | Uvicorn | proxy | Exact trusted proxy addresses; never * on a public edge |
+| CORS_ORIGINS / CORS_METHODS / CORS_HEADERS | backend/.env | Backend | no | Explicit browser allowlists |
+| JWT_ALGORITHM / ACCESS_TOKEN_MINUTES / REFRESH_TOKEN_DAYS | backend/.env | Backend | no | Signing algorithm and session limits |
+| MAX_UPLOAD_MB / MAX_ROWS | backend/.env | Backend | no | Defaults 25 MB / 100000 rows |
+| ML_MAX_ROWS / ML_N_JOBS / ML_UMAP_MAX_ROWS | backend/.env | Backend | no | Bounded model memory, CPU and sample size |
+| MODEL_LOCK_SECONDS | backend/.env | Backend | no | Renewable lease duration, default 300 seconds |
+| DATA_RETENTION_DAYS / AUDIT_RETENTION_DAYS | backend/.env | Backend / TTL | no | Defaults 365 days |
+| CACHE_BACKEND / CACHE_TTL_SECONDS | backend/.env | Backend | no | Redis required for multiple workers |
+| REDIS_PASSWORD | infra/redis.env | Redis only | production | Unique cache credential |
+| REDIS_URL | backend/.env | Backend | Redis | Authenticated URI matching Redis password |
+| MONGO_TLS_CA_FILE / MONGO_TLS_CERT_KEY_FILE | backend/.env | Backend | production | Internal CA and client identity |
+| VITE_API_URL | frontend/.env | Browser build | no | Public origin only; never put secrets here |
+| DOMAIN | .env | Caddy | production | Public hostname; no database credentials |
 
-For multi-worker or multi-instance deployments, use Redis because an in-process cache is isolated per worker.
+Production additionally requires `infra/redis.env` and TLS certificates. See
+[deployment security](docs/DEPLOYMENT_SECURITY.md). Refresh-token replay revokes
+sessions; role and active-state changes revoke sessions; password resets require
+an authenticated password change at next login.
 
 ## Roles
 
@@ -194,7 +169,7 @@ ruff check .
 ruff format --check .
 mypy app
 pytest
-pip-audit -r requirements.txt
+pip-audit -r requirements.lock
 ```
 
 Frontend:
@@ -235,21 +210,3 @@ See `docs/DEPLOYMENT_SECURITY.md`. `docker-compose.prod.yml` puts Caddy at the p
 ## License
 
 MIT. See `LICENSE` and `THIRD_PARTY_LICENSES.md`.
-
-## Environment file separation
-
-Copy examples into private files; never share them in archives. Mongo environment
-variables initialize a fresh volume only. They do not rotate existing DB passwords.
-
-| Variable | File | Consumed by | Required | Description |
-|---|---|---|---|---|
-| MONGO_ROOT_USER, MONGO_ROOT_PASSWORD | infra/mongo.env | Mongo only | yes | Bootstrap administrator |
-| PATH_APP_USER, PATH_APP_PASSWORD | infra/mongo.env | Mongo only | yes | Least privilege app identity |
-| MONGO_URI | backend/.env | Backend only | yes | App user's authenticated URI (mongo host in Docker, localhost manually) |
-| JWT_SECRET | backend/.env | Backend only | yes | Unique signing key of at least 32 random bytes |
-| REDIS_PASSWORD | infra/redis.env | Redis only | production | Shared cache credential |
-| REDIS_URL | backend/.env | Backend only | production | Authenticated cache URI matching Redis credential |
-| VITE_API_URL | frontend/.env | Frontend build | no | Public API origin; never a secret |
-| DOMAIN | .env | Caddy only | production | Public hostname |
-
-See [secret rotation](docs/SECRET_ROTATION.md) before reusing any shared archive.

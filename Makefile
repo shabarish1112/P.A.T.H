@@ -3,7 +3,7 @@ PYTHON ?= python
 .PHONY: setup dev lint test e2e build audit
 setup:
 	$(PYTHON) -m venv backend/.venv
-	backend/.venv/bin/pip install -r backend/requirements-dev.txt
+	backend/.venv/bin/pip install --require-hashes -r backend/requirements-dev.lock
 	cd frontend && npm ci
 
 dev:
@@ -24,5 +24,5 @@ build:
 	docker compose build
 
 audit:
-	cd backend && .venv/bin/pip-audit -r requirements.txt
+	cd backend && .venv/bin/pip-audit -r requirements.lock
 	cd frontend && npm audit --audit-level=high

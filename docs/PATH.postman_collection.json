@@ -3,53 +3,254 @@
     "name": "P.A.T.H. API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8000" },
-    { "key": "accessToken", "value": "" },
-    { "key": "transactionId", "value": "" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    }
   ],
   "item": [
     {
-      "name": "Login",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
-        "body": { "mode": "urlencoded", "urlencoded": [{ "key": "username", "value": "{{email}}" }, { "key": "password", "value": "{{password}}", "type": "text" }] },
-        "url": "{{baseUrl}}/api/auth/login"
-      }
-    },
-    {
-      "name": "Me",
+      "name": "Compatibility health check",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": "{{baseUrl}}/api/auth/me"
+        "url": "{{base_url}}/health"
       }
     },
     {
-      "name": "Transactions",
+      "name": "Liveness check",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": "{{baseUrl}}/api/transactions?limit=50"
+        "url": "{{base_url}}/health/live"
       }
     },
     {
-      "name": "Run model",
+      "name": "Readiness check",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/health/ready"
+      }
+    },
+    {
+      "name": "Authenticate a user",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\"model\":\"if\",\"top_k\":50,\"n_estimators\":200,\"random_state\":42,\"include_umap\":false}" },
-        "url": "{{baseUrl}}/api/models/run"
+        "url": "{{base_url}}/api/auth/login",
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "{{email}}"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}"
+            }
+          ]
+        }
       }
     },
     {
-      "name": "Review transaction",
+      "name": "Rotate a refresh token and issue a new access token",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/auth/refresh",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "Revoke the current refresh token",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/auth/logout"
+      }
+    },
+    {
+      "name": "Return the validated authenticated session",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/auth/me"
+      }
+    },
+    {
+      "name": "Change Password",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/auth/change-password",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"current_password\": \"{{current_password}}\", \"new_password\": \"{{new_password}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "List users",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/users"
+      }
+    },
+    {
+      "name": "Create a user",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/users"
+      }
+    },
+    {
+      "name": "Update a user role or active state",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/users/{user_id}"
+      }
+    },
+    {
+      "name": "Reset Password",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/users/{user_id}/reset-password",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"new_password\": \"{{new_password}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Validate and activate a CSV dataset",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/datasets/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List datasets",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/datasets"
+      }
+    },
+    {
+      "name": "Delete an inactive dataset",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/datasets/{dataset_id}"
+      }
+    },
+    {
+      "name": "List active-dataset transactions with cursor pagination",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/transactions"
+      }
+    },
+    {
+      "name": "Get a transaction and its current anomaly/review context",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/transactions/{transaction_id}"
+      }
+    },
+    {
+      "name": "Queue one anomaly model run",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/models/run"
+      }
+    },
+    {
+      "name": "Get model-job progress",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/models/jobs/{job_id}"
+      }
+    },
+    {
+      "name": "List Top-K anomalies for the active model run",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/anomalies"
+      }
+    },
+    {
+      "name": "Executive analytics summary",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/analytics/summary"
+      }
+    },
+    {
+      "name": "Flagged-count trend for current and previous model runs",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/analytics/trend"
+      }
+    },
+    {
+      "name": "Break down active anomalies by dimension",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/analytics/breakdown"
+      }
+    },
+    {
+      "name": "List reviews for the active run",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/reviews"
+      }
+    },
+    {
+      "name": "Record a human validation decision",
       "request": {
         "method": "PUT",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\"status\":\"Pending Review\",\"note\":\"Reviewed against source records.\"}" },
-        "url": "{{baseUrl}}/api/reviews/{{transactionId}}"
+        "url": "{{base_url}}/api/reviews/{transaction_id}"
+      }
+    },
+    {
+      "name": "Read immutable audit events",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/audit"
       }
     }
   ]

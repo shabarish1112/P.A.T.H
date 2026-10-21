@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "P.A.T.H. API",
-    "version": "1.0.0",
-    "description": "Public Anomaly Tracking Hub. Screening signals support human review. Unusual != Fraudulent."
+    "description": "Public Anomaly Tracking Hub. An anomaly-screening layer above authoritative public-finance systems. Unusual != Fraudulent.",
+    "version": "1.0.0"
   },
   "paths": {
     "/health": {
@@ -12,9 +12,17 @@
           "Health"
         ],
         "summary": "Compatibility health check",
+        "operationId": "health_health_get",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -25,9 +33,17 @@
           "Health"
         ],
         "summary": "Liveness check",
+        "operationId": "health_live_health_live_get",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -38,9 +54,17 @@
           "Health"
         ],
         "summary": "Readiness check",
+        "operationId": "health_ready_health_ready_get",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -51,30 +75,40 @@
           "Authentication"
         ],
         "summary": "Authenticate a user",
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        },
+        "operationId": "login_api_auth_login_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "username",
-                  "password"
-                ],
-                "properties": {
-                  "username": {
-                    "type": "string",
-                    "format": "email"
-                  },
-                  "password": {
-                    "type": "string",
-                    "format": "password"
-                  }
+                "$ref": "#/components/schemas/Body_login_api_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Login rate limit exceeded"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -87,10 +121,49 @@
         "tags": [
           "Authentication"
         ],
-        "summary": "Rotate refresh token",
+        "summary": "Rotate a refresh token and issue a new access token",
+        "operationId": "refresh_api_auth_refresh_post",
+        "parameters": [
+          {
+            "name": "path_refresh",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Path Refresh"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -100,16 +173,93 @@
         "tags": [
           "Authentication"
         ],
-        "summary": "Revoke current refresh token",
+        "summary": "Revoke the current refresh token",
+        "operationId": "logout_api_auth_logout_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path_refresh",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Path Refresh"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Return the validated authenticated session",
+        "operationId": "me_api_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -118,7 +268,7 @@
             "description": "State conflict"
           },
           "422": {
-            "description": "Validation failed"
+            "description": "Request validation failed"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -131,30 +281,55 @@
         ]
       }
     },
-    "/api/auth/me": {
-      "get": {
+    "/api/auth/change-password": {
+      "post": {
         "tags": [
           "Authentication"
         ],
-        "summary": "Validated authenticated session",
+        "summary": "Change Password",
+        "operationId": "change_password_api_auth_change_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
           },
           "409": {
             "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -173,15 +348,23 @@
           "Users"
         ],
         "summary": "List users",
+        "operationId": "list_users_api_users_get",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -190,7 +373,7 @@
             "description": "State conflict"
           },
           "422": {
-            "description": "Validation failed"
+            "description": "Request validation failed"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -206,25 +389,50 @@
         "tags": [
           "Users"
         ],
-        "summary": "Create user",
+        "summary": "Create a user",
+        "operationId": "create_user_api_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "201": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
           },
           "409": {
             "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -242,30 +450,8 @@
         "tags": [
           "Users"
         ],
-        "summary": "Update user",
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Authentication required or token invalid"
-          },
-          "403": {
-            "description": "Role not permitted"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
-          },
-          "429": {
-            "description": "Rate limit exceeded"
-          }
-        },
+        "summary": "Update a user role or active state",
+        "operationId": "update_user_api_users__user_id__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -277,10 +463,207 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "title": "User Id"
             }
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/reset-password": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Reset Password",
+        "operationId": "reset_password_api_users__user_id__reset_password_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordReset"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/datasets/upload": {
+      "post": {
+        "tags": [
+          "Datasets"
+        ],
+        "summary": "Validate and activate a CSV dataset",
+        "operationId": "upload_dataset_api_datasets_upload_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "confirm_replace",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Required when replacing an active dataset",
+              "default": false,
+              "title": "Confirm Replace"
+            },
+            "description": "Required when replacing an active dataset"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_dataset_api_datasets_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
       }
     },
     "/api/datasets": {
@@ -289,15 +672,23 @@
           "Datasets"
         ],
         "summary": "List datasets",
+        "operationId": "list_datasets_api_datasets_get",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetListResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -306,7 +697,7 @@
             "description": "State conflict"
           },
           "422": {
-            "description": "Validation failed"
+            "description": "Request validation failed"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -319,90 +710,13 @@
         ]
       }
     },
-    "/api/datasets/upload": {
-      "post": {
-        "tags": [
-          "Datasets"
-        ],
-        "summary": "Validate and activate CSV dataset",
-        "responses": {
-          "201": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Authentication required or token invalid"
-          },
-          "403": {
-            "description": "Role not permitted"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
-          },
-          "429": {
-            "description": "Rate limit exceeded"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "file"
-                ],
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/datasets/{dataset_id}": {
       "delete": {
         "tags": [
           "Datasets"
         ],
-        "summary": "Delete inactive dataset",
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Authentication required or token invalid"
-          },
-          "403": {
-            "description": "Role not permitted"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
-          },
-          "429": {
-            "description": "Rate limit exceeded"
-          }
-        },
+        "summary": "Delete an inactive dataset",
+        "operationId": "delete_dataset_api_datasets__dataset_id__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -414,10 +728,51 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 64,
+              "pattern": "^[a-f0-9]+$",
+              "title": "Dataset Id"
             }
           }
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
       }
     },
     "/api/transactions": {
@@ -425,16 +780,87 @@
         "tags": [
           "Transactions"
         ],
-        "summary": "Cursor-paged transactions",
+        "summary": "List active-dataset transactions with cursor pagination",
+        "operationId": "list_transactions_api_transactions_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -442,18 +868,10 @@
           "409": {
             "description": "State conflict"
           },
-          "422": {
-            "description": "Validation failed"
-          },
           "429": {
             "description": "Rate limit exceeded"
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/transactions/{transaction_id}": {
@@ -461,30 +879,8 @@
         "tags": [
           "Transactions"
         ],
-        "summary": "Transaction context",
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Authentication required or token invalid"
-          },
-          "403": {
-            "description": "Role not permitted"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
-          },
-          "429": {
-            "description": "Rate limit exceeded"
-          }
-        },
+        "summary": "Get a transaction and its current anomaly/review context",
+        "operationId": "transaction_detail_api_transactions__transaction_id__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -496,27 +892,40 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "title": "Transaction Id"
             }
           }
-        ]
-      }
-    },
-    "/api/models/run": {
-      "post": {
-        "tags": [
-          "Models"
         ],
-        "summary": "Queue anomaly model run",
         "responses": {
-          "202": {
-            "description": "Success"
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -524,8 +933,61 @@
           "409": {
             "description": "State conflict"
           },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/models/run": {
+      "post": {
+        "tags": [
+          "Models"
+        ],
+        "summary": "Queue one anomaly model run",
+        "operationId": "run_model_job_api_models_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelJobResponse"
+                }
+              }
+            }
+          },
           "422": {
-            "description": "Validation failed"
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -535,50 +997,7 @@
           {
             "OAuth2PasswordBearer": []
           }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "model"
-                ],
-                "properties": {
-                  "model": {
-                    "type": "string",
-                    "enum": [
-                      "if",
-                      "eif",
-                      "dif"
-                    ]
-                  },
-                  "top_k": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 5000,
-                    "default": 50
-                  },
-                  "n_estimators": {
-                    "type": "integer",
-                    "minimum": 50,
-                    "maximum": 1000,
-                    "default": 200
-                  },
-                  "random_state": {
-                    "type": "integer",
-                    "default": 42
-                  },
-                  "include_umap": {
-                    "type": "boolean",
-                    "default": false
-                  }
-                }
-              }
-            }
-          }
-        }
+        ]
       }
     },
     "/api/models/jobs/{job_id}": {
@@ -586,30 +1005,8 @@
         "tags": [
           "Models"
         ],
-        "summary": "Model job progress",
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Authentication required or token invalid"
-          },
-          "403": {
-            "description": "Role not permitted"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
-          },
-          "429": {
-            "description": "Rate limit exceeded"
-          }
-        },
+        "summary": "Get model-job progress",
+        "operationId": "get_model_job_api_models_jobs__job_id__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -621,27 +1018,40 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 64,
+              "pattern": "^[a-f0-9-]+$",
+              "title": "Job Id"
             }
           }
-        ]
-      }
-    },
-    "/api/anomalies": {
-      "get": {
-        "tags": [
-          "Anomalies"
         ],
-        "summary": "Active Top-K anomalies",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelJobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -649,18 +1059,91 @@
           "409": {
             "description": "State conflict"
           },
-          "422": {
-            "description": "Validation failed"
-          },
           "429": {
             "description": "Rate limit exceeded"
           }
-        },
+        }
+      }
+    },
+    "/api/anomalies": {
+      "get": {
+        "tags": [
+          "Anomalies"
+        ],
+        "summary": "List Top-K anomalies for the active model run",
+        "operationId": "list_anomalies_api_anomalies_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5000,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RiskLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Risk"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnomalyListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
       }
     },
     "/api/analytics/summary": {
@@ -669,15 +1152,23 @@
           "Analytics"
         ],
         "summary": "Executive analytics summary",
+        "operationId": "summary_api_analytics_summary_get",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -686,7 +1177,7 @@
             "description": "State conflict"
           },
           "422": {
-            "description": "Validation failed"
+            "description": "Request validation failed"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -704,16 +1195,24 @@
         "tags": [
           "Analytics"
         ],
-        "summary": "Current vs previous flagged trend",
+        "summary": "Flagged-count trend for current and previous model runs",
+        "operationId": "trend_api_analytics_trend_get",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -722,7 +1221,7 @@
             "description": "State conflict"
           },
           "422": {
-            "description": "Validation failed"
+            "description": "Request validation failed"
           },
           "429": {
             "description": "Rate limit exceeded"
@@ -740,16 +1239,69 @@
         "tags": [
           "Analytics"
         ],
-        "summary": "Anomaly dimension breakdown",
+        "summary": "Break down active anomalies by dimension",
+        "operationId": "breakdown_api_analytics_breakdown_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "field",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "agency",
+                "scheme",
+                "district",
+                "risk"
+              ],
+              "type": "string",
+              "default": "agency",
+              "title": "Field"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsBreakdownResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -757,18 +1309,10 @@
           "409": {
             "description": "State conflict"
           },
-          "422": {
-            "description": "Validation failed"
-          },
           "429": {
             "description": "Rate limit exceeded"
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/reviews": {
@@ -776,16 +1320,53 @@
         "tags": [
           "Reviews"
         ],
-        "summary": "Active-run review events",
+        "summary": "List reviews for the active run",
+        "operationId": "list_reviews_api_reviews_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -793,18 +1374,10 @@
           "409": {
             "description": "State conflict"
           },
-          "422": {
-            "description": "Validation failed"
-          },
           "429": {
             "description": "Rate limit exceeded"
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/reviews/{transaction_id}": {
@@ -812,30 +1385,8 @@
         "tags": [
           "Reviews"
         ],
-        "summary": "Record human validation decision",
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Authentication required or token invalid"
-          },
-          "403": {
-            "description": "Role not permitted"
-          },
-          "404": {
-            "description": "Resource not found"
-          },
-          "409": {
-            "description": "State conflict"
-          },
-          "422": {
-            "description": "Validation failed"
-          },
-          "429": {
-            "description": "Rate limit exceeded"
-          }
-        },
+        "summary": "Record a human validation decision",
+        "operationId": "update_review_api_reviews__transaction_id__put",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -847,7 +1398,11 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "title": "Transaction Id"
             }
           }
         ],
@@ -856,27 +1411,46 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "status"
-                ],
-                "properties": {
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "Pending Review",
-                      "Confirmed Finding",
-                      "False Alert",
-                      "Escalated"
-                    ]
-                  },
-                  "note": {
-                    "type": "string",
-                    "maxLength": 2000
-                  }
+                "$ref": "#/components/schemas/ReviewBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
           }
         }
       }
@@ -886,16 +1460,53 @@
         "tags": [
           "Audit"
         ],
-        "summary": "Read audit events",
+        "summary": "Read immutable audit events",
+        "operationId": "list_audit_logs_api_audit_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication required or token invalid"
           },
           "403": {
-            "description": "Role not permitted"
+            "description": "Authenticated role is not permitted"
           },
           "404": {
             "description": "Resource not found"
@@ -903,64 +1514,1392 @@
           "409": {
             "description": "State conflict"
           },
-          "422": {
-            "description": "Validation failed"
-          },
           "429": {
             "description": "Rate limit exceeded"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
-      }
-    }
-  },
-  "components": {
-    "securitySchemes": {
-      "OAuth2PasswordBearer": {
-        "type": "oauth2",
-        "flows": {
-          "password": {
-            "tokenUrl": "/api/auth/login",
-            "scopes": {}
           }
         }
       }
     }
   },
-  "tags": [
-    {
-      "name": "Health"
+  "components": {
+    "schemas": {
+      "AnalyticsBreakdownItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "count"
+        ],
+        "title": "AnalyticsBreakdownItem"
+      },
+      "AnalyticsBreakdownResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsBreakdownItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AnalyticsBreakdownResponse"
+      },
+      "AnomalyListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnomalyResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "active_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "active_run_id"
+        ],
+        "title": "AnomalyListResponse"
+      },
+      "AnomalyResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "transaction_id": {
+            "type": "string",
+            "title": "Transaction Id"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "agency": {
+            "type": "string",
+            "title": "Agency"
+          },
+          "scheme": {
+            "type": "string",
+            "title": "Scheme"
+          },
+          "vendor": {
+            "type": "string",
+            "title": "Vendor"
+          },
+          "district": {
+            "type": "string",
+            "title": "District"
+          },
+          "path_insight": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Path Insight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "transaction_id",
+          "rank",
+          "score",
+          "risk",
+          "amount_paise",
+          "agency",
+          "scheme",
+          "vendor",
+          "district",
+          "path_insight"
+        ],
+        "title": "AnomalyResponse"
+      },
+      "AuditLogListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLogResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AuditLogListResponse"
+      },
+      "AuditLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "actor_email": {
+            "type": "string",
+            "title": "Actor Email"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "actor_id",
+          "actor_email",
+          "action",
+          "resource_type",
+          "resource_id",
+          "details",
+          "request_id",
+          "created_at"
+        ],
+        "title": "AuditLogResponse"
+      },
+      "AuthUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "must_change_password": {
+            "type": "boolean",
+            "title": "Must Change Password",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "role",
+          "is_active"
+        ],
+        "title": "AuthUser"
+      },
+      "Body_login_api_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_api_auth_login_post"
+      },
+      "Body_upload_dataset_api_datasets_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "UTF-8 CSV"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_dataset_api_datasets_upload_post"
+      },
+      "DatasetDeleteResponse": {
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "deleted"
+        ],
+        "title": "DatasetDeleteResponse"
+      },
+      "DatasetListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DatasetListResponse"
+      },
+      "DatasetResponse": {
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "filename",
+          "row_count",
+          "created_at",
+          "created_by",
+          "is_active"
+        ],
+        "title": "DatasetResponse"
+      },
+      "DatasetUploadResponse": {
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "rows_received": {
+            "type": "integer",
+            "title": "Rows Received"
+          },
+          "rows_accepted": {
+            "type": "integer",
+            "title": "Rows Accepted"
+          },
+          "rows_rejected": {
+            "type": "integer",
+            "title": "Rows Rejected"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "activated": {
+            "type": "boolean",
+            "title": "Activated"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "filename",
+          "rows_received",
+          "rows_accepted",
+          "rows_rejected",
+          "issues",
+          "activated",
+          "created_at"
+        ],
+        "title": "DatasetUploadResponse"
+      },
+      "DeltaMetric": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Value"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous"
+          },
+          "delta_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "previous",
+          "delta_percent"
+        ],
+        "title": "DeltaMetric"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MeResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthUser"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "title": "MeResponse"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse"
+      },
+      "ModelJobResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "progress",
+          "message",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ModelJobResponse"
+      },
+      "ModelName": {
+        "type": "string",
+        "enum": [
+          "if",
+          "eif",
+          "dif"
+        ],
+        "title": "ModelName"
+      },
+      "PasswordChange": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Current Password"
+          },
+          "new_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "PasswordChange"
+      },
+      "PasswordReset": {
+        "properties": {
+          "new_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_password"
+        ],
+        "title": "PasswordReset"
+      },
+      "RefreshResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthUser"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "expires_at",
+          "user"
+        ],
+        "title": "RefreshResponse"
+      },
+      "ReviewBody": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ReviewBody"
+      },
+      "ReviewListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ReviewListResponse"
+      },
+      "ReviewResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "transaction_id": {
+            "type": "string",
+            "title": "Transaction Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "actor_email": {
+            "type": "string",
+            "title": "Actor Email"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "transaction_id",
+          "run_id",
+          "status",
+          "note",
+          "actor_id",
+          "actor_email",
+          "created_at"
+        ],
+        "title": "ReviewResponse"
+      },
+      "ReviewStatus": {
+        "type": "string",
+        "enum": [
+          "Pending Review",
+          "Confirmed Finding",
+          "False Alert",
+          "Escalated"
+        ],
+        "title": "ReviewStatus"
+      },
+      "RiskLevel": {
+        "type": "string",
+        "enum": [
+          "Critical",
+          "High",
+          "Medium",
+          "Low",
+          "Normal"
+        ],
+        "title": "RiskLevel"
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "analyst",
+          "reviewer",
+          "admin"
+        ],
+        "title": "Role"
+      },
+      "RunRequest": {
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/ModelName"
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "default": 50
+          },
+          "n_estimators": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 50.0,
+            "title": "N Estimators",
+            "default": 200
+          },
+          "random_state": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Random State",
+            "default": 42
+          },
+          "include_umap": {
+            "type": "boolean",
+            "title": "Include Umap",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "title": "RunRequest"
+      },
+      "SummaryResponse": {
+        "properties": {
+          "total_disbursed_paise": {
+            "$ref": "#/components/schemas/DeltaMetric"
+          },
+          "total_transactions": {
+            "$ref": "#/components/schemas/DeltaMetric"
+          },
+          "active_anomalies": {
+            "$ref": "#/components/schemas/DeltaMetric"
+          },
+          "flagged_volume_paise": {
+            "$ref": "#/components/schemas/DeltaMetric"
+          },
+          "review_capacity": {
+            "type": "integer",
+            "title": "Review Capacity"
+          },
+          "active_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_disbursed_paise",
+          "total_transactions",
+          "active_anomalies",
+          "flagged_volume_paise",
+          "review_capacity",
+          "active_run_id"
+        ],
+        "title": "SummaryResponse"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthUser"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "expires_at",
+          "user"
+        ],
+        "title": "TokenResponse"
+      },
+      "TransactionDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "transaction_id": {
+            "type": "string",
+            "title": "Transaction Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "agency": {
+            "type": "string",
+            "title": "Agency"
+          },
+          "scheme": {
+            "type": "string",
+            "title": "Scheme"
+          },
+          "vendor": {
+            "type": "string",
+            "title": "Vendor"
+          },
+          "district": {
+            "type": "string",
+            "title": "District"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "sanctioned_amount_paise": {
+            "type": "integer",
+            "title": "Sanctioned Amount Paise"
+          },
+          "payment_type": {
+            "type": "string",
+            "title": "Payment Type"
+          },
+          "reversal_flag": {
+            "type": "boolean",
+            "title": "Reversal Flag"
+          },
+          "cancelled_flag": {
+            "type": "boolean",
+            "title": "Cancelled Flag"
+          },
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "anomaly_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anomaly Score"
+          },
+          "risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Status"
+          },
+          "path_insight": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path Insight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "transaction_id",
+          "date",
+          "agency",
+          "scheme",
+          "vendor",
+          "district",
+          "amount_paise",
+          "sanctioned_amount_paise",
+          "payment_type",
+          "reversal_flag",
+          "cancelled_flag",
+          "dataset_id"
+        ],
+        "title": "TransactionDetailResponse"
+      },
+      "TransactionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "estimated_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "TransactionListResponse"
+      },
+      "TransactionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "transaction_id": {
+            "type": "string",
+            "title": "Transaction Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "agency": {
+            "type": "string",
+            "title": "Agency"
+          },
+          "scheme": {
+            "type": "string",
+            "title": "Scheme"
+          },
+          "vendor": {
+            "type": "string",
+            "title": "Vendor"
+          },
+          "district": {
+            "type": "string",
+            "title": "District"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "sanctioned_amount_paise": {
+            "type": "integer",
+            "title": "Sanctioned Amount Paise"
+          },
+          "payment_type": {
+            "type": "string",
+            "title": "Payment Type"
+          },
+          "reversal_flag": {
+            "type": "boolean",
+            "title": "Reversal Flag"
+          },
+          "cancelled_flag": {
+            "type": "boolean",
+            "title": "Cancelled Flag"
+          },
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "transaction_id",
+          "date",
+          "agency",
+          "scheme",
+          "vendor",
+          "district",
+          "amount_paise",
+          "sanctioned_amount_paise",
+          "payment_type",
+          "reversal_flag",
+          "cancelled_flag",
+          "dataset_id"
+        ],
+        "title": "TransactionResponse"
+      },
+      "TrendPoint": {
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "title": "Bucket"
+          },
+          "current": {
+            "type": "integer",
+            "title": "Current"
+          },
+          "previous": {
+            "type": "integer",
+            "title": "Previous"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bucket",
+          "current",
+          "previous"
+        ],
+        "title": "TrendPoint"
+      },
+      "TrendResponse": {
+        "properties": {
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "current_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Run Id"
+          },
+          "previous_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "points",
+          "current_run_id",
+          "previous_run_id"
+        ],
+        "title": "TrendResponse"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Password"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "role"
+        ],
+        "title": "UserCreate"
+      },
+      "UserListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "UserListResponse"
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "role",
+          "is_active",
+          "created_at"
+        ],
+        "title": "UserResponse"
+      },
+      "UserUpdate": {
+        "properties": {
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Role"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ValidationIssue": {
+        "properties": {
+          "row": {
+            "type": "integer",
+            "title": "Row"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "reason"
+        ],
+        "title": "ValidationIssue"
+      }
     },
-    {
-      "name": "Authentication"
-    },
-    {
-      "name": "Users"
-    },
-    {
-      "name": "Datasets"
-    },
-    {
-      "name": "Transactions"
-    },
-    {
-      "name": "Models"
-    },
-    {
-      "name": "Anomalies"
-    },
-    {
-      "name": "Analytics"
-    },
-    {
-      "name": "Reviews"
-    },
-    {
-      "name": "Audit"
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/auth/login"
+          }
+        }
+      }
     }
-  ]
+  }
 }
