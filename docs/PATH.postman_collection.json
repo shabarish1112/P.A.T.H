@@ -105,7 +105,13 @@
               "language": "json"
             }
           }
-        }
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
       }
     },
     {
@@ -119,21 +125,51 @@
       "name": "Create a user",
       "request": {
         "method": "POST",
-        "url": "{{base_url}}/api/users"
+        "url": "{{base_url}}/api/users",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{new_user_email}}\",\n  \"password\": \"{{new_password}}\",\n  \"role\": \"analyst\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
       }
     },
     {
       "name": "Update a user role or active state",
       "request": {
         "method": "PATCH",
-        "url": "{{base_url}}/api/users/{user_id}"
+        "url": "{{base_url}}/api/users/{{user_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"is_active\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
       }
     },
     {
       "name": "Reset Password",
       "request": {
         "method": "POST",
-        "url": "{{base_url}}/api/users/{user_id}/reset-password",
+        "url": "{{base_url}}/api/users/{{user_id}}/reset-password",
         "body": {
           "mode": "raw",
           "raw": "{\"new_password\": \"{{new_password}}\"}",
@@ -142,7 +178,13 @@
               "language": "json"
             }
           }
-        }
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
       }
     },
     {
@@ -173,7 +215,7 @@
       "name": "Delete an inactive dataset",
       "request": {
         "method": "DELETE",
-        "url": "{{base_url}}/api/datasets/{dataset_id}"
+        "url": "{{base_url}}/api/datasets/{{dataset_id}}"
       }
     },
     {
@@ -187,21 +229,36 @@
       "name": "Get a transaction and its current anomaly/review context",
       "request": {
         "method": "GET",
-        "url": "{{base_url}}/api/transactions/{transaction_id}"
+        "url": "{{base_url}}/api/transactions/{{transaction_id}}"
       }
     },
     {
       "name": "Queue one anomaly model run",
       "request": {
         "method": "POST",
-        "url": "{{base_url}}/api/models/run"
+        "url": "{{base_url}}/api/models/run",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model\": \"if\",\n  \"top_k\": 50,\n  \"n_estimators\": 200,\n  \"random_state\": 42,\n  \"include_umap\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
       }
     },
     {
       "name": "Get model-job progress",
       "request": {
         "method": "GET",
-        "url": "{{base_url}}/api/models/jobs/{job_id}"
+        "url": "{{base_url}}/api/models/jobs/{{job_id}}"
       }
     },
     {
@@ -243,7 +300,22 @@
       "name": "Record a human validation decision",
       "request": {
         "method": "PUT",
-        "url": "{{base_url}}/api/reviews/{transaction_id}"
+        "url": "{{base_url}}/api/reviews/{{transaction_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"Pending Review\",\n  \"note\": \"Review note\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
       }
     },
     {

@@ -11,12 +11,19 @@ P.A.T.H. is a research-grade anomaly-screening platform for public-fund disbursa
 - MongoDB **8.2.x**
 - Docker Engine 27+ and Docker Compose v2 (recommended)
 
+## Verified runtime and pinned image versions
+
+Local checks used Python 3.14.6, Node 24.19.0 and Docker CLI 29.6.1. The daemon was
+unavailable. Container inputs are Python 3.14.0, Node 24.10.0, nginx-unprivileged
+1.29.2, MongoDB 8.2.1, Redis 8.2.2 and Caddy 2.10.2, each pinned by digest.
+Container vulnerability scans remain mandatory before publication.
+
 ## Docker quick start
 
 Supported series: Python **3.14.x**, Node **24.x**, MongoDB **8.2.x** and Docker
 Engine 27+ / Compose v2.24+. Dockerfiles pin exact image digests; Python locks pin
 all artifacts with hashes. The local permission smoke also ran against MongoDB
-8.3.2; the container and TLS checks must still pass on the deployment target.
+8.3.8; the container and TLS checks must still pass on the deployment target.
 
 On Windows generate private configuration with:
 

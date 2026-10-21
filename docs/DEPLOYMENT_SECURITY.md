@@ -57,6 +57,9 @@ and job timestamp; stale jobs are failed at startup. Set `MODEL_LOCK_SECONDS` ab
 normal scheduling delays. Uploads stage rows in batches and activate last, rolling
 back on failure. `MAX_ROWS`, `MAX_UPLOAD_MB` and `ML_MAX_ROWS` bound resource use.
 Uploads beyond model limits can be stored but cannot start an oversized model run.
+The edge proxy caps request bodies at 26 MB to accommodate the default 25 MB file
+limit plus multipart overhead. If operators increase `MAX_UPLOAD_MB`, they must
+adjust both Caddy and nginx request-body caps and review disk/memory capacity.
 Retention runs at startup and daily under a database lease and logs deletion counts.
 
 ## Release gates
