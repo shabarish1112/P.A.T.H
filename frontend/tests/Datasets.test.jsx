@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -23,7 +23,7 @@ describe('Datasets', () => {
     render(<Datasets />);
     const file = new File(['x'], 'data.csv', { type: 'text/csv' });
     await user.upload(screen.getByLabelText('CSV file'), file);
-    await user.click(screen.getByRole('button', { name: 'Upload and validate' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Upload and validate' }).closest('form'));
     expect(await screen.findByText(/Row 3: bad date/)).toBeInTheDocument();
   });
 });
