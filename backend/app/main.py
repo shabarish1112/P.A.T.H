@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import get_settings
@@ -18,15 +19,44 @@ from app.schemas.common import MessageResponse
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     initialize_database()
     apply_retention(retention_days=settings.data_retention_days)
     yield
 
 
+class PathAPI(FastAPI):
+    def openapi(self) -> dict[str, object]:
+        if self.openapi_schema:
+            return self.openapi_schema
+        schema = get_openapi(
+            title=self.title,
+            version=self.version,
+            description=self.description,
+            routes=self.routes,
+        )
+        standard_errors = {
+            '401': {'description': 'Authentication required or token invalid'},
+            '403': {'description': 'Authenticated role is not permitted'},
+            '404': {'description': 'Resource not found'},
+            '409': {'description': 'State conflict'},
+            '422': {'description': 'Request validation failed'},
+            '429': {'description': 'Rate limit exceeded'},
+        }
+        for path, methods in schema.get('paths', {}).items():
+            if path.startswith('/health') or path in {'/api/auth/login', '/api/auth/refresh'}:
+                continue
+            for operation in methods.values():
+                if isinstance(operation, dict) and 'responses' in operation:
+                    for code, response in standard_errors.items():
+                        operation['responses'].setdefault(code, response)
+        self.openapi_schema = schema
+        return schema
+
+
 settings = get_settings()
-app = FastAPI(
+app = PathAPI(
     title='P.A.T.H. API',
     version='1.0.0',
     description=(
@@ -68,38 +98,6 @@ def health_ready() -> MessageResponse:
     ping_database()
     return MessageResponse(message='ready')
 
-
-
-
-def custom_openapi() -> dict[str, object]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-    )
-    standard_errors = {
-        '401': {'description': 'Authentication required or token invalid'},
-        '403': {'description': 'Authenticated role is not permitted'},
-        '404': {'description': 'Resource not found'},
-        '409': {'description': 'State conflict'},
-        '422': {'description': 'Request validation failed'},
-        '429': {'description': 'Rate limit exceeded'},
-    }
-    for path, methods in schema.get('paths', {}).items():
-        if path.startswith('/health') or path in {'/api/auth/login', '/api/auth/refresh'}:
-            continue
-        for operation in methods.values():
-            if isinstance(operation, dict) and 'responses' in operation:
-                for code, response in standard_errors.items():
-                    operation['responses'].setdefault(code, response)
-    app.openapi_schema = schema
-    return schema
-
-
-app.openapi = custom_openapi
 
 for router in (
     auth.router,

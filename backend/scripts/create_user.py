@@ -18,7 +18,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description='Create a P.A.T.H. user')
     parser.add_argument('--email', required=True)
     parser.add_argument('--role', required=True, choices=[role.value for role in Role])
-    parser.add_argument('--password-stdin', action='store_true', help='Read one password line from stdin (CI only)')
+    parser.add_argument(
+        '--password-stdin', action='store_true', help='Read one password line from stdin (CI only)'
+    )
     args = parser.parse_args()
     if args.password_stdin:
         password = sys.stdin.readline().rstrip('\n')

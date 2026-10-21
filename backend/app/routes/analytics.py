@@ -33,7 +33,9 @@ def summary(
     return result
 
 
-@router.get('/trend', response_model=TrendResponse, summary='Flagged-count trend for current and previous model runs')
+@router.get(
+    '/trend', response_model=TrendResponse, summary='Flagged-count trend for current and previous model runs'
+)
 def trend(
     response: Response,
     _: Annotated[AuthUser, Depends(require_role(Role.analyst, Role.reviewer, Role.admin))],
@@ -44,7 +46,11 @@ def trend(
     return result
 
 
-@router.get('/breakdown', response_model=AnalyticsBreakdownResponse, summary='Break down active anomalies by dimension')
+@router.get(
+    '/breakdown',
+    response_model=AnalyticsBreakdownResponse,
+    summary='Break down active anomalies by dimension',
+)
 def breakdown(
     response: Response,
     _: Annotated[AuthUser, Depends(require_role(Role.analyst, Role.reviewer, Role.admin))],

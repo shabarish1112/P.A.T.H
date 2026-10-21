@@ -23,9 +23,40 @@ export default function Anomalies() {
   ];
   return (
     <>
-      <header className="page-heading"><div><p className="eyebrow">Ranked screening output</p><h1>Anomaly Explorer</h1><p>Only the configured Top-K cases from the active model run are shown.</p></div></header>
-      <section className="panel"><div className="toolbar"><label>Risk<select value={risk} onChange={(event) => setRisk(event.target.value)}><option value="">All</option>{RISK_LEVELS.map((item) => <option key={item}>{item}</option>)}</select></label></div>
-        <AsyncState loading={state.loading} error={state.error} empty={!state.data?.items?.length} onRetry={state.retry}><DataTable columns={columns} rows={state.data?.items || []} rowKey={(row) => row.id} onRowClick={(row) => navigate(`/investigation/${encodeURIComponent(row.transaction_id)}`)} /></AsyncState>
+      <header className="page-heading">
+        <div>
+          <p className="eyebrow">Ranked screening output</p>
+          <h1>Anomaly Explorer</h1>
+          <p>Only the configured Top-K cases from the active model run are shown.</p>
+        </div>
+      </header>
+      <section className="panel">
+        <div className="toolbar">
+          <label>
+            Risk
+            <select value={risk} onChange={(event) => setRisk(event.target.value)}>
+              <option value="">All</option>
+              {RISK_LEVELS.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <AsyncState
+          loading={state.loading}
+          error={state.error}
+          empty={!state.data?.items?.length}
+          onRetry={state.retry}
+        >
+          <DataTable
+            columns={columns}
+            rows={state.data?.items || []}
+            rowKey={(row) => row.id}
+            onRowClick={(row) =>
+              navigate(`/investigation/${encodeURIComponent(row.transaction_id)}`)
+            }
+          />
+        </AsyncState>
       </section>
     </>
   );

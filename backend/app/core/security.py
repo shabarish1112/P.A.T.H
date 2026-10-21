@@ -3,8 +3,9 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Annotated, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
 
 import jwt
 from argon2 import PasswordHasher
@@ -43,13 +44,13 @@ def constant_time_equal(left: str, right: str) -> bool:
 
 
 def create_access_token(user_id: str, email: str, role: Role, settings: Settings) -> tuple[str, datetime]:
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_minutes)
+    expires_at = datetime.now(UTC) + timedelta(minutes=settings.access_token_minutes)
     payload = {
         'sub': user_id,
         'email': email,
         'role': role.value,
         'type': 'access',
-        'iat': datetime.now(timezone.utc),
+        'iat': datetime.now(UTC),
         'exp': expires_at,
         'jti': secrets.token_hex(16),
     }
@@ -64,7 +65,9 @@ def decode_access_token(token: str, settings: Settings) -> dict[str, object]:
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     except InvalidTokenError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid or expired token') from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid or expired token'
+        ) from exc
     if payload.get('type') != 'access':
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token type')
     return payload
@@ -80,7 +83,9 @@ async def get_current_user(
     user_id = str(payload.get('sub', ''))
     user = users.get_by_id(user_id)
     if user is None or not user.get('is_active', True):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid authentication credentials')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid authentication credentials'
+        )
     auth_user = AuthUser(
         id=str(user['_id']),
         email=str(user['email']),
@@ -93,7 +98,7 @@ async def get_current_user(
 
 
 def require_role(*roles: Role) -> Callable[..., AuthUser]:
-    async def dependency(current_user: Annotated[AuthUser, Depends(get_current_user)]) -> AuthUser:
+    def dependency(current_user: Annotated[AuthUser, Depends(get_current_user)]) -> AuthUser:
         if current_user.role not in roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Insufficient permissions')
         return current_user

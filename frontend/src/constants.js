@@ -1,9 +1,4 @@
-export const REVIEW_STATUSES = [
-  'Pending Review',
-  'Confirmed Finding',
-  'False Alert',
-  'Escalated',
-];
+export const REVIEW_STATUSES = ['Pending Review', 'Confirmed Finding', 'False Alert', 'Escalated'];
 
 export const RISK_LEVELS = ['Critical', 'High', 'Medium', 'Low', 'Normal'];
 

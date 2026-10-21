@@ -21,7 +21,7 @@ class AuthUser(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = 'bearer'
+    token_type: str = Field(default='bearer')
     expires_at: datetime
     user: AuthUser
 

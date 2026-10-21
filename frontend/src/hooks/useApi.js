@@ -10,14 +10,19 @@ export function useApi(fetcher, dependencies = []) {
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-    Promise.resolve(fetcher(controller.signal))
+    Promise.resolve()
+      .then(() => {
+        if (controller.signal.aborted) return;
+        setLoading(true);
+        setError(null);
+        return fetcher(controller.signal);
+      })
       .then((result) => {
         if (!controller.signal.aborted) setData(result);
       })
       .catch((requestError) => {
-        if (!controller.signal.aborted && requestError?.name !== 'AbortError') setError(requestError);
+        if (!controller.signal.aborted && requestError?.name !== 'AbortError')
+          setError(requestError);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);

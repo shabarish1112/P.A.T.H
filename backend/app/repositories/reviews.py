@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import Depends
@@ -17,7 +17,7 @@ class ReviewRepository(BaseRepository):
         )
 
     def create(self, doc: dict[str, Any]) -> dict[str, Any]:
-        doc = {**doc, 'created_at': datetime.now(timezone.utc)}
+        doc = {**doc, 'created_at': datetime.now(UTC)}
         result = self.db.reviews.insert_one(doc)
         doc['_id'] = result.inserted_id
         return doc

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import HTTPException
@@ -29,13 +29,13 @@ class FakeReviews:
         return self.events[-1] if self.events else None
 
     def create(self, doc: dict):
-        out = {**doc, '_id': str(len(self.events) + 1), 'created_at': datetime.now(timezone.utc)}
+        out = {**doc, '_id': str(len(self.events) + 1), 'created_at': datetime.now(UTC)}
         self.events.append(out)
         return out
 
 
 def actor(user_id: str, role: Role) -> AuthUser:
-    return AuthUser(id=user_id, email=f'{user_id}@example.test', role=role, is_active=True)
+    return AuthUser(id=user_id, email=f'{user_id}@example.com', role=role, is_active=True)
 
 
 def test_reviewer_separation_of_duties_requires_second_actor() -> None:

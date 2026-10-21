@@ -32,7 +32,9 @@ def create_user(
     audit: Annotated[AuditService, Depends(get_audit_service)],
 ) -> UserResponse:
     result = service.create(body)
-    audit.record(actor, 'user.create', 'user', result.id, {'role': result.role.value}, request.state.request_id)
+    audit.record(
+        actor, 'user.create', 'user', result.id, {'role': result.role.value}, request.state.request_id
+    )
     return result
 
 
@@ -46,5 +48,12 @@ def update_user(
     audit: Annotated[AuditService, Depends(get_audit_service)],
 ) -> UserResponse:
     result = service.update(user_id, body)
-    audit.record(actor, 'user.update', 'user', user_id, body.model_dump(exclude_none=True, mode='json'), request.state.request_id)
+    audit.record(
+        actor,
+        'user.update',
+        'user',
+        user_id,
+        body.model_dump(exclude_none=True, mode='json'),
+        request.state.request_id,
+    )
     return result

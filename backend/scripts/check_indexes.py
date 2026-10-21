@@ -5,6 +5,7 @@ from app.db.mongo import get_db
 
 def stages(plan: dict) -> list[str]:
     found: list[str] = []
+
     def walk(value):
         if isinstance(value, dict):
             if 'stage' in value:
@@ -14,6 +15,7 @@ def stages(plan: dict) -> list[str]:
         elif isinstance(value, list):
             for nested in value:
                 walk(nested)
+
     walk(plan)
     return found
 
@@ -30,7 +32,9 @@ def main() -> None:
     active_dataset = db.settings.find_one({'_id': 'active_dataset_id'})
     active_run = db.settings.find_one({'_id': 'active_run_id'})
     if active_dataset:
-        plan = db.transactions.find({'dataset_id': active_dataset['value'], 'search_key': {'$regex': '^tx'}}).explain()
+        plan = db.transactions.find(
+            {'dataset_id': active_dataset['value'], 'search_key': {'$regex': '^tx'}}
+        ).explain()
         assert_ixscan('transaction prefix search', plan)
     if active_run:
         plan = db.anomalies.find({'run_id': active_run['value']}).sort('rank', 1).explain()

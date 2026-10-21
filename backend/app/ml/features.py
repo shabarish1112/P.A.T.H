@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from bisect import bisect_left
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import numpy as np
@@ -32,8 +32,8 @@ def _require_datetime(value: Any) -> datetime:
     if not isinstance(value, datetime):
         raise ValueError('transaction date must be a datetime')
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc)
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def engineer_features(rows: list[dict[str, Any]]) -> tuple[np.ndarray, list[dict[str, float | int | str]]]:

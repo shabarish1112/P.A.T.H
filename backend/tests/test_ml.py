@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pytest
@@ -11,7 +11,7 @@ from app.schemas.enums import ModelName, RiskLevel
 
 
 def rows() -> list[dict[str, object]]:
-    base = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    base = datetime(2026, 1, 1, tzinfo=UTC)
     return [
         {
             'transaction_id': f'TX-{index}',

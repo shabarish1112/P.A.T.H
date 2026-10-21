@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, Path, Query
 
 from app.core.pagination import Pagination, pagination_params
@@ -14,7 +15,11 @@ from app.services.transaction_service import TransactionService
 router = APIRouter(prefix='/transactions', tags=['Transactions'])
 
 
-@router.get('', response_model=TransactionListResponse, summary='List active-dataset transactions with cursor pagination')
+@router.get(
+    '',
+    response_model=TransactionListResponse,
+    summary='List active-dataset transactions with cursor pagination',
+)
 def list_transactions(
     _: Annotated[AuthUser, Depends(require_role(Role.analyst, Role.reviewer, Role.admin))],
     pagination: Annotated[Pagination, Depends(pagination_params)],
@@ -24,7 +29,11 @@ def list_transactions(
     return service.list(pagination.limit, pagination.cursor, q)
 
 
-@router.get('/{transaction_id}', response_model=TransactionDetailResponse, summary='Get a transaction and its current anomaly/review context')
+@router.get(
+    '/{transaction_id}',
+    response_model=TransactionDetailResponse,
+    summary='Get a transaction and its current anomaly/review context',
+)
 def transaction_detail(
     transaction_id: Annotated[str, Path(min_length=1, max_length=64, pattern=r'^[A-Za-z0-9._:-]+$')],
     _: Annotated[AuthUser, Depends(require_role(Role.analyst, Role.reviewer, Role.admin))],

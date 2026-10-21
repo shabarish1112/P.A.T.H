@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pymongo import ASCENDING, DESCENDING, MongoClient
@@ -59,7 +59,16 @@ def initialize_database(db: Database[Any] | None = None) -> None:
     database = db if db is not None else get_db()
     transaction_schema = {
         'bsonType': 'object',
-        'required': ['transaction_id', 'date', 'agency', 'scheme', 'vendor', 'district', 'amount_paise', 'dataset_id'],
+        'required': [
+            'transaction_id',
+            'date',
+            'agency',
+            'scheme',
+            'vendor',
+            'district',
+            'amount_paise',
+            'dataset_id',
+        ],
         'properties': {
             'transaction_id': {'bsonType': 'string'},
             'date': {'bsonType': 'date'},
@@ -163,13 +172,17 @@ def initialize_database(db: Database[Any] | None = None) -> None:
     database.refresh_tokens.create_index([('expires_at', ASCENDING)], expireAfterSeconds=0)
     database.login_attempts.create_index([('key', ASCENDING)], unique=True)
     database.login_attempts.create_index([('expire_at', ASCENDING)], expireAfterSeconds=0)
-    database.transactions.create_index([('dataset_id', ASCENDING), ('transaction_id', ASCENDING)], unique=True)
+    database.transactions.create_index(
+        [('dataset_id', ASCENDING), ('transaction_id', ASCENDING)], unique=True
+    )
     database.transactions.create_index([('dataset_id', ASCENDING), ('search_key', ASCENDING)])
     database.transactions.create_index([('dataset_id', ASCENDING), ('_id', ASCENDING)])
     database.transactions.create_index([('dataset_id', ASCENDING), ('date', ASCENDING)])
     database.anomalies.create_index([('run_id', ASCENDING), ('rank', ASCENDING)])
     database.anomalies.create_index([('run_id', ASCENDING), ('risk', ASCENDING), ('rank', ASCENDING)])
-    database.reviews.create_index([('run_id', ASCENDING), ('transaction_id', ASCENDING), ('created_at', DESCENDING)])
+    database.reviews.create_index(
+        [('run_id', ASCENDING), ('transaction_id', ASCENDING), ('created_at', DESCENDING)]
+    )
     database.audit_logs.create_index([('created_at', DESCENDING)])
     database.audit_logs.create_index([('expire_at', ASCENDING)], expireAfterSeconds=0)
     database.model_runs.create_index([('created_at', DESCENDING)])
@@ -177,15 +190,16 @@ def initialize_database(db: Database[Any] | None = None) -> None:
     database.datasets.create_index([('created_at', DESCENDING)])
 
 
-
 def apply_retention(db: Database[Any] | None = None, retention_days: int = 365) -> None:
     database = db if db is not None else get_db()
-    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff = datetime.now(UTC) - timedelta(days=retention_days)
     active = database.settings.find_one({'_id': 'active_dataset_id'})
     active_id = active.get('value') if active else None
     old_ids = [
         doc['dataset_id']
-        for doc in database.datasets.find({'created_at': {'$lt': cutoff}, 'dataset_id': {'$ne': active_id}}, {'dataset_id': 1})
+        for doc in database.datasets.find(
+            {'created_at': {'$lt': cutoff}, 'dataset_id': {'$ne': active_id}}, {'dataset_id': 1}
+        )
     ]
     if old_ids:
         database.transactions.delete_many({'dataset_id': {'$in': old_ids}})

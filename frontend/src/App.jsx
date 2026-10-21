@@ -18,7 +18,8 @@ function ProtectedRoute() {
   const auth = useAuth();
   const location = useLocation();
   if (auth.loading) return <AsyncState loading />;
-  if (!auth.authenticated) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!auth.authenticated)
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <Layout />;
 }
 

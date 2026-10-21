@@ -10,10 +10,21 @@ export const LineChart = memo(function LineChart({ points }) {
   const y = (value) => height - pad - (value / max) * (height - pad * 2);
   const line = (key) => points.map((point, index) => `${x(index)},${y(point[key])}`).join(' ');
   return (
-    <div className="chart-wrap" role="img" aria-label="Current and previous flagged transaction trend">
+    <div
+      className="chart-wrap"
+      role="img"
+      aria-label="Current and previous flagged transaction trend"
+    >
       <svg viewBox={`0 0 ${width} ${height}`} className="line-chart">
         {[0.25, 0.5, 0.75].map((ratio) => (
-          <line key={ratio} x1={pad} y1={height * ratio} x2={width - pad} y2={height * ratio} className="grid-line" />
+          <line
+            key={ratio}
+            x1={pad}
+            y1={height * ratio}
+            x2={width - pad}
+            y2={height * ratio}
+            className="grid-line"
+          />
         ))}
         <polyline points={line('previous')} className="line previous" fill="none" />
         <polyline points={line('current')} className="line current" fill="none" />

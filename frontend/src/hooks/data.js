@@ -39,7 +39,10 @@ export function useAnomalies({ risk = '', limit = 200 } = {}) {
 }
 
 export function useReviews(limit = 200) {
-  const fetcher = useCallback((signal) => api.get(`/api/reviews?limit=${limit}`, { signal }), [limit]);
+  const fetcher = useCallback(
+    (signal) => api.get(`/api/reviews?limit=${limit}`, { signal }),
+    [limit],
+  );
   return useApi(fetcher, [limit]);
 }
 

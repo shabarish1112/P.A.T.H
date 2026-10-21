@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.repositories.anomalies import AnomalyRepository
 from app.repositories.settings import SettingsRepository
 from app.schemas.anomalies import AnomalyListResponse, AnomalyResponse
+from app.schemas.enums import RiskLevel
 
 
 class AnomalyService:
@@ -23,7 +24,7 @@ class AnomalyService:
                     transaction_id=str(doc['transaction_id']),
                     rank=int(doc['rank']),
                     score=float(doc['score']),
-                    risk=str(doc['risk']),
+                    risk=RiskLevel(str(doc['risk'])),
                     amount_paise=int(doc['amount_paise']),
                     agency=str(doc['agency']),
                     scheme=str(doc['scheme']),

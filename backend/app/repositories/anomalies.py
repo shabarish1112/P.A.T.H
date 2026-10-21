@@ -21,20 +21,32 @@ class AnomalyRepository(BaseRepository):
     def sum_flagged_volume(self, run_id: str) -> int:
         result = list(
             self.db.anomalies.aggregate(
-                [{'$match': {'run_id': run_id}}, {'$group': {'_id': None, 'total': {'$sum': '$amount_paise'}}}]
+                [
+                    {'$match': {'run_id': run_id}},
+                    {'$group': {'_id': None, 'total': {'$sum': '$amount_paise'}}},
+                ]
             )
         )
         return int(result[0]['total']) if result else 0
 
     def trend_by_month(self, run_id: str, dataset_id: str) -> dict[str, int]:
-        pipeline = [
+        pipeline: list[dict[str, object]] = [
             {'$match': {'run_id': run_id}},
             {
                 '$lookup': {
                     'from': 'transactions',
                     'let': {'txid': '$transaction_id'},
                     'pipeline': [
-                        {'$match': {'$expr': {'$and': [{'$eq': ['$transaction_id', '$$txid']}, {'$eq': ['$dataset_id', dataset_id]}]}}},
+                        {
+                            '$match': {
+                                '$expr': {
+                                    '$and': [
+                                        {'$eq': ['$transaction_id', '$$txid']},
+                                        {'$eq': ['$dataset_id', dataset_id]},
+                                    ]
+                                }
+                            }
+                        },
                         {'$project': {'date': 1}},
                     ],
                     'as': 'tx',
@@ -42,7 +54,12 @@ class AnomalyRepository(BaseRepository):
             },
             {'$set': {'tx': {'$first': '$tx'}}},
             {'$match': {'tx.date': {'$ne': None}}},
-            {'$group': {'_id': {'$dateToString': {'format': '%Y-%m', 'date': '$tx.date'}}, 'count': {'$sum': 1}}},
+            {
+                '$group': {
+                    '_id': {'$dateToString': {'format': '%Y-%m', 'date': '$tx.date'}},
+                    'count': {'$sum': 1},
+                }
+            },
             {'$sort': {'_id': 1}},
         ]
         return {str(item['_id']): int(item['count']) for item in self.db.anomalies.aggregate(pipeline)}
@@ -50,7 +67,7 @@ class AnomalyRepository(BaseRepository):
     def breakdown(self, run_id: str, field: str, limit: int = 10) -> list[dict[str, Any]]:
         if field not in {'agency', 'scheme', 'district', 'risk'}:
             raise ValueError('Unsupported breakdown field')
-        pipeline = [
+        pipeline: list[dict[str, object]] = [
             {'$match': {'run_id': run_id}},
             {'$group': {'_id': f'${field}', 'count': {'$sum': 1}}},
             {'$sort': {'count': -1, '_id': 1}},

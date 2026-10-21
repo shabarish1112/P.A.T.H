@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Path as ApiPath, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
+from fastapi import Path as ApiPath
 
 from app.core.security import require_role
 from app.schemas.auth import AuthUser
@@ -15,7 +16,12 @@ from app.services.dependencies import get_audit_service, get_dataset_service
 router = APIRouter(prefix='/datasets', tags=['Datasets'])
 
 
-@router.post('/upload', response_model=DatasetUploadResponse, status_code=201, summary='Validate and activate a CSV dataset')
+@router.post(
+    '/upload',
+    response_model=DatasetUploadResponse,
+    status_code=201,
+    summary='Validate and activate a CSV dataset',
+)
 async def upload_dataset(
     request: Request,
     file: Annotated[UploadFile, File(description='UTF-8 CSV')],

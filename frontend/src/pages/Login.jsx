@@ -31,13 +31,20 @@ export default function Login() {
   return (
     <main className="login-shell">
       <section className="login-story" aria-label="P.A.T.H. product principle">
-        <div className="login-brand"><span className="brand-mark" /> P.A.T.H.</div>
+        <div className="login-brand">
+          <span className="brand-mark" /> P.A.T.H.
+        </div>
         <div>
           <p className="eyebrow">Public anomaly surveillance</p>
           <h1>Screen unusual fund activity without turning a score into an accusation.</h1>
-          <p className="lead">P.A.T.H. prioritizes statistically unusual disbursals for authorized human review above the system of record.</p>
+          <p className="lead">
+            P.A.T.H. prioritizes statistically unusual disbursals for authorized human review above
+            the system of record.
+          </p>
         </div>
-        <div className="principle-card"><span className="principle-dot" /> Unusual ≠ Fraudulent</div>
+        <div className="principle-card">
+          <span className="principle-dot" /> Unusual ≠ Fraudulent
+        </div>
       </section>
       <section className="login-panel">
         <form className="login-form" onSubmit={submit}>
@@ -45,11 +52,32 @@ export default function Login() {
           <h2>Sign in</h2>
           <p className="muted">Use an account provisioned by a P.A.T.H. administrator.</p>
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input
+            id="email"
+            type="email"
+            autoComplete="username"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
           <label htmlFor="password">Password</label>
-          <input id="password" type="password" autoComplete="current-password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} />
-          {error ? <div className="inline-error" role="alert" aria-live="assertive">{error}</div> : null}
-          <button type="submit" className="button primary wide" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}</button>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          {error ? (
+            <div className="inline-error" role="alert" aria-live="assertive">
+              {error}
+            </div>
+          ) : null}
+          <button type="submit" className="button primary wide" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
         </form>
       </section>
     </main>

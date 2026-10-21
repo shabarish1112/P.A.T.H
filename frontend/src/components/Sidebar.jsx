@@ -26,7 +26,9 @@ export const Sidebar = memo(function Sidebar({ mobileOpen, onMobileClose }) {
     <aside
       className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}
       aria-label="Primary navigation"
-      onPointerEnter={(event) => { if (event.pointerType !== 'touch') setHovered(true); }}
+      onPointerEnter={(event) => {
+        if (event.pointerType !== 'touch') setHovered(true);
+      }}
       onPointerLeave={() => setHovered(false)}
       onPointerDownCapture={() => {
         pointerFocus.current = true;
@@ -60,7 +62,9 @@ export const Sidebar = memo(function Sidebar({ mobileOpen, onMobileClose }) {
             onClick={onMobileClose}
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+            <span className="nav-icon" aria-hidden="true">
+              {item.icon}
+            </span>
             {!collapsed ? <span>{item.label}</span> : null}
           </NavLink>
         ))}

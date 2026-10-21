@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import builtins
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import Depends
@@ -10,22 +11,24 @@ from app.repositories.base import BaseRepository, get_database
 
 
 class DatasetRepository(BaseRepository):
-    def create_dataset(self, dataset_id: str, filename: str, row_count: int, created_by: str) -> dict[str, Any]:
+    def create_dataset(
+        self, dataset_id: str, filename: str, row_count: int, created_by: str
+    ) -> dict[str, Any]:
         doc = {
             'dataset_id': dataset_id,
             'filename': filename,
             'row_count': row_count,
-            'created_at': datetime.now(timezone.utc),
+            'created_at': datetime.now(UTC),
             'created_by': created_by,
         }
         self.db.datasets.insert_one(doc)
         return doc
 
-    def insert_transactions(self, docs: list[dict[str, Any]]) -> None:
+    def insert_transactions(self, docs: builtins.list[dict[str, Any]]) -> None:
         if docs:
             self.db.transactions.insert_many(docs, ordered=True)
 
-    def list(self) -> list[dict[str, Any]]:
+    def list(self) -> builtins.list[dict[str, Any]]:
         return list(self.db.datasets.find().sort('created_at', -1))
 
     def get(self, dataset_id: str) -> dict[str, Any] | None:
@@ -35,7 +38,7 @@ class DatasetRepository(BaseRepository):
         self.db.transactions.delete_many({'dataset_id': dataset_id})
         self.db.datasets.delete_one({'dataset_id': dataset_id})
 
-    def existing_transaction_ids(self, dataset_id: str, ids: list[str]) -> set[str]:
+    def existing_transaction_ids(self, dataset_id: str, ids: builtins.list[str]) -> set[str]:
         return {
             str(doc['transaction_id'])
             for doc in self.db.transactions.find(

@@ -5,12 +5,20 @@ import { describe, expect, it, vi } from 'vitest';
 import Login from '../src/pages/Login';
 
 vi.mock('../src/contexts/AuthContext', () => ({
-  useAuth: () => ({ authenticated: false, loading: false, login: vi.fn().mockRejectedValue(new Error('Invalid email or password')) }),
+  useAuth: () => ({
+    authenticated: false,
+    loading: false,
+    login: vi.fn().mockRejectedValue(new Error('Invalid email or password')),
+  }),
 }));
 
 describe('Login', () => {
   it('does not prefill credentials and shows login failures', async () => {
-    render(<MemoryRouter><Login /></MemoryRouter>);
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>,
+    );
     const email = screen.getByLabelText('Email');
     const password = screen.getByLabelText('Password');
     expect(email).toHaveValue('');

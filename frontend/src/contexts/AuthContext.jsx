@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { api, apiRequest, clearAccessToken, setAccessToken, setAuthFailureHandler } from '../services/api';
+import {
+  api,
+  apiRequest,
+  clearAccessToken,
+  setAccessToken,
+  setAuthFailureHandler,
+} from '../services/api';
 
 const AuthContext = createContext(null);
 

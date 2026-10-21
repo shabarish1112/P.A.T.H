@@ -64,7 +64,11 @@ class RedisCache(CacheBackend):
 
     def get(self, key: str) -> object:
         value = self.client.get(key)
-        return _MISS if value is None else json.loads(value)
+        if value is None:
+            return _MISS
+        if not isinstance(value, str | bytes | bytearray):
+            raise TypeError('Redis returned a non-serializable cache value')
+        return json.loads(value)
 
     def set(self, key: str, value: Any, ttl_seconds: int) -> None:
         self.client.setex(key, ttl_seconds, json.dumps(value, default=str))

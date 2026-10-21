@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import Depends
-from pymongo.errors import DuplicateKeyError
 from pymongo.database import Database
+from pymongo.errors import DuplicateKeyError
 
 from app.repositories.base import BaseRepository, get_database
 
@@ -13,7 +13,7 @@ from app.repositories.base import BaseRepository, get_database
 class ModelRepository(BaseRepository):
     def acquire_lock(self, job_id: str) -> bool:
         try:
-            self.db.locks.insert_one({'_id': 'model_run', 'job_id': job_id, 'created_at': datetime.now(timezone.utc)})
+            self.db.locks.insert_one({'_id': 'model_run', 'job_id': job_id, 'created_at': datetime.now(UTC)})
             return True
         except DuplicateKeyError:
             return False
@@ -22,7 +22,7 @@ class ModelRepository(BaseRepository):
         self.db.locks.delete_one({'_id': 'model_run', 'job_id': job_id})
 
     def create_job(self, job_id: str, actor_id: str) -> dict[str, Any]:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         doc = {
             'job_id': job_id,
             'status': 'queued',
@@ -37,7 +37,7 @@ class ModelRepository(BaseRepository):
         return doc
 
     def update_job(self, job_id: str, **fields: Any) -> None:
-        fields['updated_at'] = datetime.now(timezone.utc)
+        fields['updated_at'] = datetime.now(UTC)
         self.db.jobs.update_one({'job_id': job_id}, {'$set': fields})
 
     def get_job(self, job_id: str) -> dict[str, Any] | None:

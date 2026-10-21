@@ -11,7 +11,9 @@ from app.schemas.reviews import ReviewBody, ReviewResponse
 
 
 class ReviewService:
-    def __init__(self, repo: ReviewRepository, settings_repo: SettingsRepository, cache: CacheBackend) -> None:
+    def __init__(
+        self, repo: ReviewRepository, settings_repo: SettingsRepository, cache: CacheBackend
+    ) -> None:
         self.repo = repo
         self.settings_repo = settings_repo
         self.cache = cache
@@ -31,7 +33,10 @@ class ReviewService:
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail='Separation of duties: another reviewer or admin must record the next action after your confirmed/escalated decision',
+                detail=(
+                    'Separation of duties: another reviewer or admin must record the next action '
+                    'after your confirmed/escalated decision'
+                ),
             )
         doc = self.repo.create(
             {
@@ -64,7 +69,7 @@ class ReviewService:
                 id=str(doc['_id']),
                 transaction_id=str(doc['transaction_id']),
                 run_id=str(doc['run_id']),
-                status=str(doc['status']),
+                status=ReviewStatus(str(doc['status'])),
                 note=str(doc.get('note', '')),
                 actor_id=str(doc['actor_id']),
                 actor_email=str(doc['actor_email']),

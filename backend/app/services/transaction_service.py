@@ -8,21 +8,7 @@ from app.schemas.transactions import TransactionDetailResponse, TransactionListR
 
 
 def _serialize_transaction(doc: dict[str, object]) -> TransactionResponse:
-    return TransactionResponse(
-        id=str(doc['_id']),
-        transaction_id=str(doc['transaction_id']),
-        date=doc['date'],
-        agency=str(doc['agency']),
-        scheme=str(doc['scheme']),
-        vendor=str(doc['vendor']),
-        district=str(doc['district']),
-        amount_paise=int(doc['amount_paise']),
-        sanctioned_amount_paise=int(doc.get('sanctioned_amount_paise', 0)),
-        payment_type=str(doc.get('payment_type', 'Electronic')),
-        reversal_flag=bool(doc.get('reversal_flag', False)),
-        cancelled_flag=bool(doc.get('cancelled_flag', False)),
-        dataset_id=str(doc['dataset_id']),
-    )
+    return TransactionResponse.model_validate({**doc, 'id': str(doc['_id'])})
 
 
 class TransactionService:

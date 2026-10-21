@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest
@@ -33,7 +33,7 @@ def test_expired_jwt_rejected() -> None:
         'email': 'user@example.com',
         'role': 'analyst',
         'type': 'access',
-        'exp': datetime.now(timezone.utc) - timedelta(seconds=1),
+        'exp': datetime.now(UTC) - timedelta(seconds=1),
     }
     token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
     with pytest.raises(HTTPException):

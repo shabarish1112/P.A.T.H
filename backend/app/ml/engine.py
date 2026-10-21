@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -33,7 +32,9 @@ def _path_lengths(model: IsolationForest, matrix: np.ndarray) -> np.ndarray:
     return np.column_stack(columns)
 
 
-def _score_if(matrix: np.ndarray, n_estimators: int, random_state: int, n_jobs: int) -> tuple[np.ndarray, np.ndarray]:
+def _score_if(
+    matrix: np.ndarray, n_estimators: int, random_state: int, n_jobs: int
+) -> tuple[np.ndarray, np.ndarray]:
     model = IsolationForest(
         n_estimators=n_estimators,
         contamination='auto',
@@ -100,7 +101,11 @@ def run_model(
     include_umap: bool = False,
     umap_max_rows: int = 5000,
 ) -> EngineResult:
-    if model_name not in {ModelName.isolation_forest, ModelName.extended_isolation_forest, ModelName.deep_isolation_forest}:
+    if model_name not in {
+        ModelName.isolation_forest,
+        ModelName.extended_isolation_forest,
+        ModelName.deep_isolation_forest,
+    }:
         raise ValueError(f'Unknown model: {model_name}')
     if matrix.ndim != 2 or len(matrix) < 2:
         raise ValueError('At least two rows are required for model execution')

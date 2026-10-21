@@ -33,7 +33,10 @@ def _set_refresh_cookie(response: Response, token: str, settings: Settings) -> N
     '/login',
     response_model=TokenResponse,
     summary='Authenticate a user',
-    responses={401: {'description': 'Invalid credentials'}, 429: {'description': 'Login rate limit exceeded'}},
+    responses={
+        401: {'description': 'Invalid credentials'},
+        429: {'description': 'Login rate limit exceeded'},
+    },
 )
 def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],

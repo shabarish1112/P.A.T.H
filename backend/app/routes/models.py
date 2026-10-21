@@ -15,7 +15,12 @@ from app.services.model_service import ModelService
 router = APIRouter(prefix='/models', tags=['Models'])
 
 
-@router.post('/run', response_model=ModelJobResponse, status_code=status.HTTP_202_ACCEPTED, summary='Queue one anomaly model run')
+@router.post(
+    '/run',
+    response_model=ModelJobResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary='Queue one anomaly model run',
+)
 def run_model_job(
     body: RunRequest,
     background_tasks: BackgroundTasks,
@@ -25,7 +30,14 @@ def run_model_job(
     audit: Annotated[AuditService, Depends(get_audit_service)],
 ) -> ModelJobResponse:
     job = service.start_job(body, actor)
-    audit.record(actor, 'model.run.queued', 'model_job', job.job_id, body.model_dump(mode='json'), request.state.request_id)
+    audit.record(
+        actor,
+        'model.run.queued',
+        'model_job',
+        job.job_id,
+        body.model_dump(mode='json'),
+        request.state.request_id,
+    )
     background_tasks.add_task(service.execute_job, job.job_id, body, actor)
     return job
 

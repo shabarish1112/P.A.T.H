@@ -34,5 +34,12 @@ def update_review(
     audit: Annotated[AuditService, Depends(get_audit_service)],
 ) -> ReviewResponse:
     result = service.create(transaction_id, body, actor)
-    audit.record(actor, 'review.update', 'transaction', transaction_id, {'status': body.status.value}, request.state.request_id)
+    audit.record(
+        actor,
+        'review.update',
+        'transaction',
+        transaction_id,
+        {'status': body.status.value},
+        request.state.request_id,
+    )
     return result

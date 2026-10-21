@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from bson import ObjectId
@@ -25,7 +25,7 @@ class UserRepository(BaseRepository):
             'password_hash': password_hash,
             'role': role,
             'is_active': True,
-            'created_at': datetime.now(timezone.utc),
+            'created_at': datetime.now(UTC),
         }
         result = self.db.users.insert_one(doc)
         doc['_id'] = result.inserted_id

@@ -1,6 +1,12 @@
 import { memo } from 'react';
 
-export const DataTable = memo(function DataTable({ columns, rows, rowKey, onRowClick, emptyMessage = 'No records found.' }) {
+export const DataTable = memo(function DataTable({
+  columns,
+  rows,
+  rowKey,
+  onRowClick,
+  emptyMessage = 'No records found.',
+}) {
   if (!rows?.length) return <div className="table-empty">{emptyMessage}</div>;
   return (
     <div className="table-scroll">

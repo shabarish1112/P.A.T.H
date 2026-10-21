@@ -43,23 +43,85 @@ export default function Admin() {
         <section className="panel">
           <h2>Create user</h2>
           <form className="review-form" onSubmit={createUser}>
-            <label>Email<input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-            <label>Temporary provisioning password<input type="password" required minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} /></label>
-            <label>Role<select value={role} onChange={(event) => setRole(event.target.value)}><option value="analyst">analyst</option><option value="reviewer">reviewer</option><option value="admin">admin</option></select></label>
-            <button className="button primary" type="submit">Create user</button>
+            <label>
+              Email
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+            <label>
+              Temporary provisioning password
+              <input
+                type="password"
+                required
+                minLength={12}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+            <label>
+              Role
+              <select value={role} onChange={(event) => setRole(event.target.value)}>
+                <option value="analyst">analyst</option>
+                <option value="reviewer">reviewer</option>
+                <option value="admin">admin</option>
+              </select>
+            </label>
+            <button className="button primary" type="submit">
+              Create user
+            </button>
           </form>
         </section>
         <section className="panel">
           <h2>Users</h2>
-          <AsyncState loading={users.loading} error={users.error} empty={!users.data?.items?.length} onRetry={users.retry}>
-            <DataTable columns={[{ key: 'email', label: 'Email' }, { key: 'role', label: 'Role' }, { key: 'is_active', label: 'Active', render: (row) => (row.is_active ? 'Yes' : 'No') }]} rows={users.data?.items || []} rowKey={(row) => row.id} />
+          <AsyncState
+            loading={users.loading}
+            error={users.error}
+            empty={!users.data?.items?.length}
+            onRetry={users.retry}
+          >
+            <DataTable
+              columns={[
+                { key: 'email', label: 'Email' },
+                { key: 'role', label: 'Role' },
+                {
+                  key: 'is_active',
+                  label: 'Active',
+                  render: (row) => (row.is_active ? 'Yes' : 'No'),
+                },
+              ]}
+              rows={users.data?.items || []}
+              rowKey={(row) => row.id}
+            />
           </AsyncState>
         </section>
       </div>
       <section className="panel">
         <h2>Audit log</h2>
-        <AsyncState loading={audit.loading} error={audit.error} empty={!audit.data?.items?.length} onRetry={audit.retry}>
-          <DataTable columns={[{ key: 'created_at', label: 'Time', render: (row) => new Date(row.created_at).toLocaleString() }, { key: 'actor_email', label: 'Actor' }, { key: 'action', label: 'Action' }, { key: 'resource_type', label: 'Resource' }, { key: 'resource_id', label: 'ID' }]} rows={audit.data?.items || []} rowKey={(row) => row.id} />
+        <AsyncState
+          loading={audit.loading}
+          error={audit.error}
+          empty={!audit.data?.items?.length}
+          onRetry={audit.retry}
+        >
+          <DataTable
+            columns={[
+              {
+                key: 'created_at',
+                label: 'Time',
+                render: (row) => new Date(row.created_at).toLocaleString(),
+              },
+              { key: 'actor_email', label: 'Actor' },
+              { key: 'action', label: 'Action' },
+              { key: 'resource_type', label: 'Resource' },
+              { key: 'resource_id', label: 'ID' },
+            ]}
+            rows={audit.data?.items || []}
+            rowKey={(row) => row.id}
+          />
         </AsyncState>
       </section>
     </>

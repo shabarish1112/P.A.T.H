@@ -30,7 +30,10 @@ function createLinkedController(externalSignal, timeoutMs) {
       externalSignal.addEventListener('abort', onAbort, { once: true });
     }
   }
-  const timer = setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeoutMs);
+  const timer = setTimeout(
+    () => controller.abort(new DOMException('Request timed out', 'TimeoutError')),
+    timeoutMs,
+  );
   return {
     signal: controller.signal,
     cleanup() {
@@ -50,7 +53,11 @@ async function parseResponse(response) {
 async function performFetch(path, options, token, timeoutMs) {
   const linked = createLinkedController(options.signal, timeoutMs);
   const headers = new Headers(options.headers || {});
-  if (!(options.body instanceof FormData) && !(options.body instanceof URLSearchParams) && !headers.has('Content-Type')) {
+  if (
+    !(options.body instanceof FormData) &&
+    !(options.body instanceof URLSearchParams) &&
+    !headers.has('Content-Type')
+  ) {
     headers.set('Content-Type', 'application/json');
   }
   if (token) headers.set('Authorization', `Bearer ${token}`);
@@ -93,7 +100,12 @@ export async function apiRequest(path, options = {}) {
   while (true) {
     try {
       const response = await performFetch(path, options, getAccessToken(), timeoutMs);
-      if (response.status === 401 && !hasRefreshed && path !== '/api/auth/refresh' && path !== '/api/auth/login') {
+      if (
+        response.status === 401 &&
+        !hasRefreshed &&
+        path !== '/api/auth/refresh' &&
+        path !== '/api/auth/login'
+      ) {
         hasRefreshed = true;
         try {
           await refreshAccessToken();
@@ -111,7 +123,12 @@ export async function apiRequest(path, options = {}) {
       if (!response.ok) {
         const error = data?.error;
         const message = error?.message || data?.detail || `Request failed (${response.status})`;
-        throw new ApiError(message, response.status, error?.code || `HTTP_${response.status}`, error?.request_id || null);
+        throw new ApiError(
+          message,
+          response.status,
+          error?.code || `HTTP_${response.status}`,
+          error?.request_id || null,
+        );
       }
       return data;
     } catch (error) {

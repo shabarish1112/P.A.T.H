@@ -9,13 +9,7 @@ from app.schemas.users import UserCreate, UserResponse, UserUpdate
 
 
 def _serialize_user(user: dict[str, object]) -> UserResponse:
-    return UserResponse(
-        id=str(user['_id']),
-        email=str(user['email']),
-        role=str(user['role']),
-        is_active=bool(user['is_active']),
-        created_at=user['created_at'],
-    )
+    return UserResponse.model_validate({**user, 'id': str(user['_id'])})
 
 
 class UserService:

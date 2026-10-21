@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import Depends
@@ -25,7 +25,7 @@ class AuditRepository(BaseRepository):
         details: dict[str, object],
         request_id: str | None,
     ) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.db.audit_logs.insert_one(
             {
                 'actor_id': actor_id,

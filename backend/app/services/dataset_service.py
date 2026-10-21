@@ -4,10 +4,9 @@ import csv
 import io
 import math
 import uuid
-from datetime import datetime, timezone
-from typing import Iterable
+from datetime import UTC, datetime
 
-from fastapi import HTTPException, Request, UploadFile, status
+from fastapi import HTTPException, Request, UploadFile
 from pydantic import ValidationError
 
 from app.core.cache import CacheBackend
@@ -15,7 +14,13 @@ from app.core.config import Settings
 from app.repositories.datasets import DatasetRepository
 from app.repositories.settings import SettingsRepository
 from app.schemas.auth import AuthUser
-from app.schemas.datasets import DatasetDeleteResponse, DatasetListResponse, DatasetResponse, DatasetUploadResponse, ValidationIssue
+from app.schemas.datasets import (
+    DatasetDeleteResponse,
+    DatasetListResponse,
+    DatasetResponse,
+    DatasetUploadResponse,
+    ValidationIssue,
+)
 from app.schemas.transactions import CsvTransactionRow
 
 _ALLOWED_COLUMNS = {
@@ -67,8 +72,8 @@ def _parse_date(value: str) -> datetime:
     except ValueError as exc:
         raise ValueError('date must be ISO-8601') from exc
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 def validate_csv_rows(content: str) -> tuple[list[dict[str, object]], int, list[ValidationIssue]]:
@@ -92,7 +97,9 @@ def validate_csv_rows(content: str) -> tuple[list[dict[str, object]], int, list[
                 'sanctioned_amount': float(str(filtered.get('sanctioned_amount', '')).replace(',', '')),
                 'reversal_flag': _to_bool(filtered.get('reversal_flag', False)),
                 'cancelled_flag': _to_bool(filtered.get('cancelled_flag', False)),
-                'injected_anomaly': _to_bool(filtered.get('injected_anomaly', False)) if 'injected_anomaly' in filtered else None,
+                'injected_anomaly': _to_bool(filtered.get('injected_anomaly', False))
+                if 'injected_anomaly' in filtered
+                else None,
             }
             item = CsvTransactionRow.model_validate(normalized)
             if not math.isfinite(item.amount) or not math.isfinite(item.sanctioned_amount):
@@ -190,7 +197,10 @@ class DatasetService:
             raise HTTPException(status_code=422, detail='No valid rows found')
         active_dataset = self.settings_repo.get('active_dataset_id')
         if active_dataset and not confirm_replace:
-            raise HTTPException(status_code=409, detail='An active dataset exists; set confirm_replace=true to activate a replacement')
+            raise HTTPException(
+                status_code=409,
+                detail='An active dataset exists; set confirm_replace=true to activate a replacement',
+            )
         dataset_id = uuid.uuid4().hex
         docs = [{**row, 'dataset_id': dataset_id} for row in accepted]
         self.repo.insert_transactions(docs)
@@ -206,5 +216,5 @@ class DatasetService:
             rows_rejected=total - len(docs),
             issues=issues,
             activated=True,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )

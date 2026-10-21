@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.repositories.transactions import TransactionRepository
 
@@ -14,7 +14,7 @@ def test_search_regex_input_is_escaped_and_prefix_only(db) -> None:
                 'dataset_id': 'd',
                 'transaction_id': txid,
                 'search_key': txid.lower(),
-                'date': datetime.now(timezone.utc),
+                'date': datetime.now(UTC),
                 'agency': 'A',
                 'scheme': 'S',
                 'vendor': 'V',

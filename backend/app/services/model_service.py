@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
 from fastapi import HTTPException, status
+from numpy.typing import NDArray
 
 from app.core.cache import CacheBackend
 from app.core.config import Settings
@@ -42,7 +43,9 @@ class ModelService:
             raise HTTPException(status_code=409, detail='No active dataset')
         job_id = uuid.uuid4().hex
         if not self.models.acquire_lock(job_id):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='A model run is already in progress')
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail='A model run is already in progress'
+            )
         doc = self.models.create_job(job_id, actor.id)
         return self._serialize_job(doc)
 
@@ -55,8 +58,10 @@ class ModelService:
                 raise ValueError('At least two transactions are required')
             self.models.update_job(job_id, progress=20, message='Engineering contextual features')
             matrix, insights = engineer_features(rows)
-            labels = np.array([1 if row.get('injected_anomaly') is True else 0 for row in rows], dtype=int)
-            if labels.sum() == 0:
+            labels: NDArray[np.int_] | None = np.array(
+                [1 if row.get('injected_anomaly') is True else 0 for row in rows], dtype=int
+            )
+            if labels is not None and labels.sum() == 0:
                 labels = None
             self.models.update_job(job_id, progress=40, message='Running anomaly model')
             result = run_model(
@@ -71,7 +76,7 @@ class ModelService:
                 umap_max_rows=self.settings.ml_umap_max_rows,
             )
             run_id = uuid.uuid4().hex
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             top_count = min(body.top_k, len(rows))
             anomalies: list[dict[str, Any]] = []
             for rank_position, row_index in enumerate(result.ranking[:top_count], start=1):
@@ -112,10 +117,17 @@ class ModelService:
             self.settings_repo.set('active_run_id', run_id)
             self.cache.invalidate('analytics:')
             self.cache.invalidate('anomalies:')
-            self.models.update_job(job_id, status='completed', progress=100, message='Completed', run_id=run_id)
+            self.models.update_job(
+                job_id, status='completed', progress=100, message='Completed', run_id=run_id
+            )
         except Exception:
             logger.exception('model_job_failed', extra={'job_id': job_id, 'actor_id': actor.id})
-            self.models.update_job(job_id, status='failed', progress=100, message='Model run failed. Check server logs with the job id.')
+            self.models.update_job(
+                job_id,
+                status='failed',
+                progress=100,
+                message='Model run failed. Check server logs with the job id.',
+            )
         finally:
             self.models.release_lock(job_id)
 

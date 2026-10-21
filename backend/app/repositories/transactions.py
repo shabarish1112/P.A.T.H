@@ -39,42 +39,40 @@ class TransactionRepository(BaseRepository):
         return self.db.transactions.find_one({'dataset_id': dataset_id, 'transaction_id': transaction_id})
 
     def sum_amount_paise(self, dataset_id: str) -> int:
-        rows = list(self.db.transactions.aggregate([{'$match': {'dataset_id': dataset_id}}, {'$group': {'_id': None, 'total': {'$sum': '$amount_paise'}}}]))
+        rows = list(
+            self.db.transactions.aggregate(
+                [
+                    {'$match': {'dataset_id': dataset_id}},
+                    {'$group': {'_id': None, 'total': {'$sum': '$amount_paise'}}},
+                ]
+            )
+        )
         return int(rows[0]['total']) if rows else 0
 
     def get_all_for_dataset(self, dataset_id: str) -> list[dict[str, Any]]:
         return list(self.db.transactions.find({'dataset_id': dataset_id}).sort('_id', 1))
 
-    def detail_with_context(self, dataset_id: str, run_id: str | None, transaction_id: str) -> dict[str, Any] | None:
-        pipeline: list[dict[str, Any]] = [
-            {'$match': {'dataset_id': dataset_id, 'transaction_id': transaction_id}},
-            {
-                '$lookup': {
-                    'from': 'anomalies',
-                    'let': {'txid': '$transaction_id'},
-                    'pipeline': [
-                        {'$match': {'$expr': {'$and': [{'$eq': ['$transaction_id', '$$txid']}, {'$eq': ['$run_id', run_id]}]}}},
-                        {'$limit': 1},
-                    ],
-                    'as': 'anomaly',
-                }
-            },
-            {
-                '$lookup': {
-                    'from': 'reviews',
-                    'let': {'txid': '$transaction_id'},
-                    'pipeline': [
-                        {'$match': {'$expr': {'$and': [{'$eq': ['$transaction_id', '$$txid']}, {'$eq': ['$run_id', run_id]}]}}},
-                        {'$sort': {'created_at': -1}},
-                        {'$limit': 1},
-                    ],
-                    'as': 'review',
-                }
-            },
-            {'$set': {'anomaly': {'$first': '$anomaly'}, 'review': {'$first': '$review'}}},
-        ]
-        docs = list(self.db.transactions.aggregate(pipeline))
-        return docs[0] if docs else None
+    def detail_with_context(
+        self, dataset_id: str, run_id: str | None, transaction_id: str
+    ) -> dict[str, Any] | None:
+        doc = self.db.transactions.find_one({'dataset_id': dataset_id, 'transaction_id': transaction_id})
+        if doc is None:
+            return None
+        doc['anomaly'] = (
+            self.db.anomalies.find_one(
+                {'dataset_id': dataset_id, 'run_id': run_id, 'transaction_id': transaction_id}
+            )
+            if run_id
+            else None
+        )
+        doc['review'] = (
+            self.db.reviews.find_one(
+                {'run_id': run_id, 'transaction_id': transaction_id}, sort=[('created_at', -1)]
+            )
+            if run_id
+            else None
+        )
+        return doc
 
 
 def get_transaction_repository(db: Annotated[Database[Any], Depends(get_database)]) -> TransactionRepository:
