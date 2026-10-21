@@ -199,7 +199,7 @@ def test_model_job_anomaly_review_and_audit_success(client, db) -> None:
     job_id = run.json()['job_id']
     job = client.get(f'/api/models/jobs/{job_id}', headers=headers)
     assert job.status_code == 200
-    assert job.json()['status'] in {'completed', 'failed'}
+    assert job.json()['status'] == 'completed', job.json()
     if job.json()['status'] == 'completed':
         anomalies = client.get('/api/anomalies', headers=headers)
         assert anomalies.status_code == 200

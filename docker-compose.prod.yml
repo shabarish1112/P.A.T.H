@@ -25,15 +25,38 @@ services:
     entrypoint:
     - /bin/sh
     - -ec
-    - export MONGO_INITDB_ROOT_USERNAME="$$MONGO_ROOT_USER" MONGO_INITDB_ROOT_PASSWORD="$$MONGO_ROOT_PASSWORD";
-      exec docker-entrypoint.sh "$$@"
+    - ': "$${MONGO_ROOT_USER:?Mongo root user required}" "$${MONGO_ROOT_PASSWORD:?Mongo
+      root password required}" "$${PATH_APP_USER:?App user required}" "$${PATH_APP_PASSWORD:?App
+      password required}"; export MONGO_INITDB_ROOT_USERNAME="$$MONGO_ROOT_USER" MONGO_INITDB_ROOT_PASSWORD="$$MONGO_ROOT_PASSWORD";
+      exec docker-entrypoint.sh "$$@"'
     - --
+    healthcheck:
+      test:
+      - CMD
+      - mongosh
+      - --quiet
+      - --host
+      - mongo
+      - --tls
+      - --tlsCAFile
+      - /run/tls/ca.pem
+      - --tlsCertificateKeyFile
+      - /run/tls/app.pem
+      - path
+      - --eval
+      - if (!db.auth(process.env.PATH_APP_USER, process.env.PATH_APP_PASSWORD)) quit(1);
+        db.audit_logs.findOne({});
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
   redis:
     image: redis:8.2.2-alpine@sha256:59b6e694653476de2c992937ebe1c64182af4728e54bb49e9b7a6c26614d8933
     command:
     - /bin/sh
     - -ec
-    - exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+    - ': "$${REDIS_PASSWORD:?Redis password required}"; exec redis-server --appendonly
+      yes --requirepass "$$REDIS_PASSWORD"'
     restart: unless-stopped
     networks:
     - private
@@ -52,11 +75,14 @@ services:
       CACHE_BACKEND: redis
       MONGO_TLS_CA_FILE: /run/tls/ca.pem
       MONGO_TLS_CERT_KEY_FILE: /run/tls/app.pem
+      FORWARDED_ALLOW_IPS: 172.30.0.10
     volumes:
     - ./secrets/tls:/run/tls:ro
     depends_on:
-    - mongo
-    - redis
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
     - private
   frontend:
@@ -83,9 +109,13 @@ services:
     - frontend
     - backend
     networks:
-    - private
+      private:
+        ipv4_address: 172.30.0.10
 networks:
-  private: null
+  private:
+    ipam:
+      config:
+      - subnet: 172.30.0.0/24
 volumes:
   mongo-prod: null
   caddy-data: null

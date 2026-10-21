@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -18,12 +20,27 @@ from app.routes import analytics, anomalies, audit, auth, datasets, models, revi
 from app.schemas.common import MessageResponse
 
 
+async def retention_schedule() -> None:
+    while True:
+        await asyncio.sleep(86400)
+        try:
+            await asyncio.to_thread(apply_retention, retention_days=settings.data_retention_days)
+        except Exception:
+            logging.getLogger(__name__).exception('scheduled_retention_failed')
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     initialize_database()
     apply_retention(retention_days=settings.data_retention_days)
-    yield
+    task = asyncio.create_task(retention_schedule())
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
 
 
 class PathAPI(FastAPI):

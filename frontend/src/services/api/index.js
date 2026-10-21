@@ -1,2 +1,2 @@
-export { api, ApiError, apiRequest, setAuthFailureHandler } from './client';
+export { api, ApiError, apiRequest, refreshAccessToken, setAuthFailureHandler } from './client';
 export { clearAccessToken, getAccessToken, setAccessToken } from './tokenStore';

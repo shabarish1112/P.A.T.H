@@ -28,7 +28,7 @@ export function useApi(fetcher, dependencies = []) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [...dependencies, version]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [...dependencies, version]); // eslint-disable-line react-hooks/exhaustive-deps -- Caller supplies the explicit request dependency list.
 
   return { data, setData, loading, error, retry };
 }

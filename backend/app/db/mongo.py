@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -183,11 +185,12 @@ def initialize_database(db: Database[Any] | None = None) -> None:
     database.reviews.create_index(
         [('run_id', ASCENDING), ('transaction_id', ASCENDING), ('created_at', DESCENDING)]
     )
-    database.audit_logs.create_index([('created_at', DESCENDING)])
-    database.audit_logs.create_index([('expire_at', ASCENDING)], expireAfterSeconds=0)
     database.model_runs.create_index([('created_at', DESCENDING)])
     database.jobs.create_index([('created_at', DESCENDING)])
     database.datasets.create_index([('created_at', DESCENDING)])
+    from app.repositories.models import ModelRepository
+
+    ModelRepository(database).recover_stale_jobs(get_settings().model_lock_seconds)
 
 
 def apply_retention(db: Database[Any] | None = None, retention_days: int = 365) -> None:
@@ -201,9 +204,29 @@ def apply_retention(db: Database[Any] | None = None, retention_days: int = 365) 
             {'created_at': {'$lt': cutoff}, 'dataset_id': {'$ne': active_id}}, {'dataset_id': 1}
         )
     ]
-    if old_ids:
-        database.transactions.delete_many({'dataset_id': {'$in': old_ids}})
-        database.datasets.delete_many({'dataset_id': {'$in': old_ids}})
+    from app.repositories.leases import LeaseRepository
+
+    owner = uuid.uuid4().hex
+    leases = LeaseRepository(database)
+    if not leases.acquire('retention', owner, 3600):
+        return
+    try:
+        counts: dict[str, int] = {}
+        if old_ids:
+            runs = [
+                doc['run_id']
+                for doc in database.model_runs.find(
+                    {'dataset_id': {'$in': old_ids}},
+                    {'run_id': 1},
+                )
+            ]
+            counts['reviews'] = database.reviews.delete_many({'run_id': {'$in': runs}}).deleted_count
+            for name in ('transactions', 'anomalies', 'model_runs', 'datasets'):
+                counts[name] = database[name].delete_many({'dataset_id': {'$in': old_ids}}).deleted_count
+            database.settings.delete_one({'_id': 'active_run_id', 'value': {'$in': runs}})
+        logging.getLogger(__name__).info('retention_complete', extra={'deleted_counts': counts})
+    finally:
+        leases.release('retention', owner)
 
 
 def ping_database(db: Database[Any] | None = None) -> bool:

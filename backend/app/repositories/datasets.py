@@ -20,6 +20,7 @@ class DatasetRepository(BaseRepository):
             'row_count': row_count,
             'created_at': datetime.now(UTC),
             'created_by': created_by,
+            'status': 'staging',
         }
         self.db.datasets.insert_one(doc)
         return doc

@@ -7,12 +7,19 @@ from fastapi import Depends
 from pymongo import ReturnDocument
 from pymongo.database import Database
 
+from app.core.time import as_utc
 from app.repositories.base import BaseRepository, get_database
 
 
 class AuthRepository(BaseRepository):
     def save_refresh_token(
-        self, user_id: str, token_hash: str, expires_at: datetime, user_agent: str | None, ip: str
+        self,
+        user_id: str,
+        token_hash: str,
+        expires_at: datetime,
+        user_agent: str | None,
+        ip: str,
+        version: int = 0,
     ) -> None:
         self.db.refresh_tokens.insert_one(
             {
@@ -22,12 +29,35 @@ class AuthRepository(BaseRepository):
                 'created_at': datetime.now(UTC),
                 'revoked_at': None,
                 'user_agent': user_agent,
+                'token_version': version,
                 'ip': ip,
             }
         )
 
     def get_refresh_token(self, token_hash: str) -> dict[str, Any] | None:
         return self.db.refresh_tokens.find_one({'token_hash': token_hash, 'revoked_at': None})
+
+    def consume_refresh_token(self, token_hash: str) -> dict[str, Any] | None:
+        now = datetime.now(UTC)
+        return self.db.refresh_tokens.find_one_and_update(
+            {'token_hash': token_hash, 'revoked_at': None, 'expires_at': {'$gt': now}},
+            {'$set': {'revoked_at': now}},
+            return_document=ReturnDocument.BEFORE,
+        )
+
+    def reused_user(self, token_hash: str) -> str | None:
+        token = self.db.refresh_tokens.find_one({'token_hash': token_hash, 'revoked_at': {'$ne': None}})
+        return str(token['user_id']) if token else None
+
+    def throttled(self, key: str, threshold: int) -> bool:
+        doc = self.db.login_attempts.find_one({'key': key})
+        if not doc or as_utc(doc['expire_at']) <= datetime.now(UTC):
+            return False
+        failures = int(doc['failures'])
+        if failures < threshold:
+            return False
+        delay = min(900, 30 * 2 ** min(failures - threshold, 5))
+        return as_utc(doc['updated_at']) + timedelta(seconds=delay) > datetime.now(UTC)
 
     def revoke_refresh_token(self, token_hash: str) -> None:
         self.db.refresh_tokens.update_one(

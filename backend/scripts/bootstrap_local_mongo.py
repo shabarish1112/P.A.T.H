@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from dotenv import dotenv_values
 from pymongo import MongoClient
 from pymongo.errors import OperationFailure
 
+from scripts.provision_mongo import provision_database
+
 
 def main() -> None:
+    os.chdir(Path(__file__).resolve().parents[1])
     root = Path(__file__).resolve().parents[2]
-    values = dotenv_values(root / '.env')
+    values = dotenv_values(root / 'infra' / 'mongo.env')
     password = values['MONGO_ROOT_PASSWORD']
     username = values['MONGO_ROOT_USER']
     # The localhost exception permits the first admin while auth stays enabled.
@@ -36,14 +43,7 @@ def main() -> None:
         serverSelectionTimeoutMS=5000,
     )
     try:
-        users = authenticated.path.command('usersInfo', values['PATH_APP_USER'])
-        if not users['users']:
-            authenticated.path.command(
-                'createUser',
-                values['PATH_APP_USER'],
-                pwd=values['PATH_APP_PASSWORD'],
-                roles=[{'role': 'readWrite', 'db': 'path'}],
-            )
+        provision_database(authenticated.path, str(values['PATH_APP_USER']), str(values['PATH_APP_PASSWORD']))
     finally:
         authenticated.close()
     print('Local MongoDB credentials initialized; authentication remains enabled.')

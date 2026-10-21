@@ -30,15 +30,20 @@ def run_model_job(
     audit: Annotated[AuditService, Depends(get_audit_service)],
 ) -> ModelJobResponse:
     job = service.start_job(body, actor)
-    audit.record(
-        actor,
-        'model.run.queued',
-        'model_job',
-        job.job_id,
-        body.model_dump(mode='json'),
-        request.state.request_id,
-    )
-    background_tasks.add_task(service.execute_job, job.job_id, body, actor)
+    try:
+        audit.record(
+            actor,
+            'model.run.queued',
+            'model_job',
+            job.job_id,
+            body.model_dump(mode='json'),
+            request.state.request_id,
+        )
+        background_tasks.add_task(service.execute_job, job.job_id, body, actor)
+    except Exception:
+        service.models.release_lock(job.job_id)
+        service.models.update_job(job.job_id, status='failed', message='Scheduling failed')
+        raise
     return job
 
 

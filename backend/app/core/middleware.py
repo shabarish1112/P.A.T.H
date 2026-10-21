@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -15,10 +16,10 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        request_id = request.headers.get('X-Request-ID') or str(uuid.uuid4())
+        supplied = request.headers.get('X-Request-ID', '')
+        request_id = supplied if re.fullmatch(r'[A-Za-z0-9._-]{8,64}', supplied) else str(uuid.uuid4())
         request.state.request_id = request_id
         request.state.user_id = None
-        request.state.user_email = None
         started = time.perf_counter()
         status_code = 500
         try:
@@ -33,7 +34,6 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
                 extra={
                     'request_id': request_id,
                     'user_id': getattr(request.state, 'user_id', None),
-                    'user_email': getattr(request.state, 'user_email', None),
                     'route': request.url.path,
                     'method': request.method,
                     'latency_ms': latency_ms,

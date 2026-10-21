@@ -73,7 +73,7 @@ async function performFetch(path, options, token, timeoutMs) {
   }
 }
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = performFetch('/api/auth/refresh', { method: 'POST' }, null, 8000)
       .then(async (response) => {

@@ -120,7 +120,11 @@ def run_model(
     scores, path_lengths = _score_if(transformed, n_estimators, random_state, n_jobs)
     ranking = np.argsort(scores)[::-1]
     risks = percentile_risk_labels(scores)
-    pca = PCA(n_components=2, random_state=random_state).fit_transform(path_lengths)
+    # Identical paths have no variance; PCA's explained-variance ratio would divide by zero.
+    if np.all(np.var(path_lengths, axis=0) == 0):
+        pca = np.zeros((len(path_lengths), 2))
+    else:
+        pca = PCA(n_components=2, random_state=random_state).fit_transform(path_lengths)
 
     umap_points: np.ndarray | None = None
     if include_umap:

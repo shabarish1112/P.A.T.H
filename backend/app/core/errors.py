@@ -34,7 +34,10 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
         status_code=422,
         content={
             **error_payload('VALIDATION_ERROR', 'Request validation failed', _request_id(request)),
-            'details': exc.errors(),
+            'details': [
+                {key: value for key, value in error.items() if key not in {'input', 'ctx'}}
+                for error in exc.errors()
+            ],
         },
     )
 

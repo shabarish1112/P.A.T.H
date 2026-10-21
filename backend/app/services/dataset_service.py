@@ -4,14 +4,17 @@ import csv
 import io
 import math
 import uuid
+from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, Request, UploadFile
 from pydantic import ValidationError
+from starlette.concurrency import run_in_threadpool
 
 from app.core.cache import CacheBackend
 from app.core.config import Settings
 from app.repositories.datasets import DatasetRepository
+from app.repositories.leases import LeaseRepository
 from app.repositories.settings import SettingsRepository
 from app.schemas.auth import AuthUser
 from app.schemas.datasets import (
@@ -76,8 +79,12 @@ def _parse_date(value: str) -> datetime:
     return parsed.astimezone(UTC)
 
 
-def validate_csv_rows(content: str) -> tuple[list[dict[str, object]], int, list[ValidationIssue]]:
-    reader = csv.DictReader(io.StringIO(content))
+def validate_csv_rows(
+    content: str | Iterable[str],
+    max_rows: int = 100000,
+    on_row: Callable[[dict[str, object]], None] | None = None,
+) -> tuple[list[dict[str, object]], int, list[ValidationIssue]]:
+    reader = csv.DictReader(io.StringIO(content) if isinstance(content, str) else content)
     fieldnames = set(reader.fieldnames or [])
     missing = sorted(_REQUIRED_COLUMNS - fieldnames)
     if missing:
@@ -88,6 +95,8 @@ def validate_csv_rows(content: str) -> tuple[list[dict[str, object]], int, list[
     total = 0
     for row_number, raw in enumerate(reader, start=2):
         total += 1
+        if total > max_rows:
+            raise HTTPException(status_code=413, detail='CSV exceeds MAX_ROWS')
         filtered = {key: value for key, value in raw.items() if key in _ALLOWED_COLUMNS}
         try:
             normalized = {
@@ -107,7 +116,8 @@ def validate_csv_rows(content: str) -> tuple[list[dict[str, object]], int, list[
             if item.transaction_id in seen:
                 raise ValueError('duplicate transaction_id in upload')
             seen.add(item.transaction_id)
-            accepted.append(
+            emit = on_row if on_row is not None else accepted.append
+            emit(
                 {
                     'transaction_id': item.transaction_id,
                     'date': item.date,
@@ -180,41 +190,62 @@ class DatasetService:
         content_length = request.headers.get('content-length')
         if content_length and int(content_length) > max_bytes:
             raise HTTPException(status_code=413, detail='Upload exceeds configured size limit')
-        data = bytearray()
-        while True:
-            chunk = await file.read(1024 * 1024)
-            if not chunk:
-                break
-            data.extend(chunk)
-            if len(data) > max_bytes:
-                raise HTTPException(status_code=413, detail='Upload exceeds configured size limit')
+        if file.size is not None and file.size > max_bytes:
+            raise HTTPException(status_code=413, detail='Upload exceeds configured size limit')
+        return await run_in_threadpool(self._ingest, file, actor, confirm_replace)
+
+    def _ingest(self, file: UploadFile, actor: AuthUser, confirm_replace: bool) -> DatasetUploadResponse:
+        owner = uuid.uuid4().hex
+        leases = LeaseRepository(self.repo.db)
+        if not leases.acquire('dataset_activation', owner, 3600):
+            raise HTTPException(status_code=409, detail='Another upload is in progress')
+        dataset_id = uuid.uuid4().hex
+        created = False
+        wrapper = io.TextIOWrapper(file.file, encoding='utf-8-sig', newline='')
+        batch: list[dict[str, object]] = []
+        count = 0
+
+        def stage(row: dict[str, object]) -> None:
+            nonlocal count
+            row['dataset_id'] = dataset_id
+            batch.append(row)
+            count += 1
+            if len(batch) >= 500:
+                self.repo.insert_transactions(batch)
+                batch.clear()
+
         try:
-            content = data.decode('utf-8-sig')
+            active_dataset = self.settings_repo.get('active_dataset_id')
+            if active_dataset and not confirm_replace:
+                raise HTTPException(status_code=409, detail='Confirm replacement of the active dataset')
+            self.repo.create_dataset(dataset_id, file.filename or 'upload.csv', 0, actor.id)
+            created = True
+            _, total, issues = validate_csv_rows(wrapper, self.settings.max_rows, stage)
+            if count == 0:
+                raise HTTPException(status_code=422, detail='No valid rows found')
+            self.repo.insert_transactions(batch)
+            self.repo.db.datasets.update_one(
+                {'dataset_id': dataset_id},
+                {'$set': {'status': 'ready', 'row_count': count}},
+            )
+            self.settings_repo.set('active_dataset_id', dataset_id)
+            created = False
+            self.cache.invalidate('analytics:')
+            self.cache.invalidate('transactions:')
+            return DatasetUploadResponse(
+                dataset_id=dataset_id,
+                filename=file.filename or 'upload.csv',
+                rows_received=total,
+                rows_accepted=count,
+                rows_rejected=total - count,
+                issues=issues,
+                activated=True,
+                created_at=datetime.now(UTC),
+            )
         except UnicodeDecodeError as exc:
             raise HTTPException(status_code=422, detail='CSV must be UTF-8 encoded') from exc
-        accepted, total, issues = validate_csv_rows(content)
-        if not accepted:
-            raise HTTPException(status_code=422, detail='No valid rows found')
-        active_dataset = self.settings_repo.get('active_dataset_id')
-        if active_dataset and not confirm_replace:
-            raise HTTPException(
-                status_code=409,
-                detail='An active dataset exists; set confirm_replace=true to activate a replacement',
-            )
-        dataset_id = uuid.uuid4().hex
-        docs = [{**row, 'dataset_id': dataset_id} for row in accepted]
-        self.repo.insert_transactions(docs)
-        self.repo.create_dataset(dataset_id, file.filename or 'upload.csv', len(docs), actor.id)
-        self.settings_repo.set('active_dataset_id', dataset_id)
-        self.cache.invalidate('analytics:')
-        self.cache.invalidate('transactions:')
-        return DatasetUploadResponse(
-            dataset_id=dataset_id,
-            filename=file.filename or 'upload.csv',
-            rows_received=total,
-            rows_accepted=len(docs),
-            rows_rejected=total - len(docs),
-            issues=issues,
-            activated=True,
-            created_at=datetime.now(UTC),
-        )
+        finally:
+            wrapper.detach()
+            if created:
+                self.repo.delete(dataset_id)
+            leases.release('dataset_activation', owner)

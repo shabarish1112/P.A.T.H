@@ -1,25 +1,38 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import Depends
 from pymongo.database import Database
-from pymongo.errors import DuplicateKeyError
 
 from app.repositories.base import BaseRepository, get_database
+from app.repositories.leases import LeaseRepository
 
 
 class ModelRepository(BaseRepository):
-    def acquire_lock(self, job_id: str) -> bool:
-        try:
-            self.db.locks.insert_one({'_id': 'model_run', 'job_id': job_id, 'created_at': datetime.now(UTC)})
-            return True
-        except DuplicateKeyError:
-            return False
+    def acquire_lock(self, job_id: str, seconds: int = 300) -> bool:
+        return LeaseRepository(self.db).acquire('model_run', job_id, seconds)
+
+    def heartbeat(self, job_id: str, seconds: int) -> bool:
+        return LeaseRepository(self.db).renew('model_run', job_id, seconds)
 
     def release_lock(self, job_id: str) -> None:
-        self.db.locks.delete_one({'_id': 'model_run', 'job_id': job_id})
+        LeaseRepository(self.db).release('model_run', job_id)
+
+    def recover_stale_jobs(self, seconds: int) -> int:
+        cutoff = datetime.now(UTC) - timedelta(seconds=seconds)
+        result = self.db.jobs.update_many(
+            {'status': {'$in': ['queued', 'running']}, 'updated_at': {'$lt': cutoff}},
+            {
+                '$set': {
+                    'status': 'failed',
+                    'message': 'Worker stopped before completion',
+                    'updated_at': datetime.now(UTC),
+                }
+            },
+        )
+        return result.modified_count
 
     def create_job(self, job_id: str, actor_id: str) -> dict[str, Any]:
         now = datetime.now(UTC)
@@ -31,7 +44,7 @@ class ModelRepository(BaseRepository):
             'run_id': None,
             'created_at': now,
             'updated_at': now,
-            'actor_id': actor_id,
+            'created_by': actor_id,
         }
         self.db.jobs.insert_one(doc)
         return doc

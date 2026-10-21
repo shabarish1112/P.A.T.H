@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -41,19 +42,39 @@ class ModelService:
         dataset_id = self.settings_repo.get('active_dataset_id')
         if not dataset_id:
             raise HTTPException(status_code=409, detail='No active dataset')
+        if self.transactions.exceeds_row_limit(dataset_id, self.settings.ml_max_rows):
+            raise HTTPException(status_code=413, detail='Dataset exceeds ML_MAX_ROWS')
         job_id = uuid.uuid4().hex
-        if not self.models.acquire_lock(job_id):
+        if not self.models.acquire_lock(job_id, self.settings.model_lock_seconds):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='A model run is already in progress'
             )
-        doc = self.models.create_job(job_id, actor.id)
-        return self._serialize_job(doc)
+        try:
+            doc = self.models.create_job(job_id, actor.id)
+            return self._serialize_job(doc)
+        except Exception:
+            self.models.release_lock(job_id)
+            raise
 
     def execute_job(self, job_id: str, body: RunRequest, actor: AuthUser) -> None:
+        stopped = threading.Event()
+
+        def heartbeat() -> None:
+            while not stopped.wait(self.settings.model_lock_seconds / 3):
+                if not self.models.heartbeat(job_id, self.settings.model_lock_seconds):
+                    return
+                self.models.update_job(job_id)
+
+        worker = threading.Thread(target=heartbeat, daemon=True)
+        worker.start()
         try:
             self.models.update_job(job_id, status='running', progress=5, message='Loading transactions')
             dataset_id = self.settings_repo.get('active_dataset_id')
-            rows = self.transactions.get_all_for_dataset(dataset_id)
+            if dataset_id is None:
+                raise ValueError('No active dataset')
+            rows = list(self.transactions.iter_for_dataset(dataset_id, self.settings.ml_max_rows + 1))
+            if len(rows) > self.settings.ml_max_rows:
+                raise ValueError('Dataset exceeds ML_MAX_ROWS')
             if len(rows) < 2:
                 raise ValueError('At least two transactions are required')
             self.models.update_job(job_id, progress=20, message='Engineering contextual features')
@@ -114,6 +135,10 @@ class ModelService:
             self.models.update_job(job_id, progress=80, message='Writing results atomically')
             self.models.insert_run(run_doc)
             self.models.insert_anomalies(anomalies)
+            if not self.models.heartbeat(job_id, self.settings.model_lock_seconds):
+                raise RuntimeError('Model lease expired')
+            if self.settings_repo.get('active_dataset_id') != dataset_id:
+                raise RuntimeError('Active dataset changed during the run')
             self.settings_repo.set('active_run_id', run_id)
             self.cache.invalidate('analytics:')
             self.cache.invalidate('anomalies:')
@@ -129,6 +154,8 @@ class ModelService:
                 message='Model run failed. Check server logs with the job id.',
             )
         finally:
+            stopped.set()
+            worker.join(timeout=2)
             self.models.release_lock(job_id)
 
     def get_job(self, job_id: str) -> ModelJobResponse:

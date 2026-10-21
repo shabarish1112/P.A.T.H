@@ -43,13 +43,16 @@ def constant_time_equal(left: str, right: str) -> bool:
     return hmac.compare_digest(left.encode('utf-8'), right.encode('utf-8'))
 
 
-def create_access_token(user_id: str, email: str, role: Role, settings: Settings) -> tuple[str, datetime]:
+def create_access_token(
+    user_id: str, email: str, role: Role, settings: Settings, version: int = 0
+) -> tuple[str, datetime]:
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.access_token_minutes)
     payload = {
         'sub': user_id,
         'email': email,
         'role': role.value,
         'type': 'access',
+        'ver': version,
         'iat': datetime.now(UTC),
         'exp': expires_at,
         'jti': secrets.token_hex(16),
@@ -86,14 +89,22 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid authentication credentials'
         )
+    if payload.get('ver', 0) != user.get('token_version', 0):
+        raise HTTPException(status_code=401, detail='Session revoked; sign in again')
+    if user.get('must_change_password') and request.url.path not in {
+        '/api/auth/change-password',
+        '/api/auth/me',
+        '/api/auth/logout',
+    }:
+        raise HTTPException(status_code=403, detail='Password change required')
     auth_user = AuthUser(
         id=str(user['_id']),
         email=str(user['email']),
         role=Role(str(user['role'])),
         is_active=bool(user.get('is_active', True)),
+        must_change_password=bool(user.get('must_change_password', False)),
     )
     request.state.user_id = auth_user.id
-    request.state.user_email = auth_user.email
     return auth_user
 
 

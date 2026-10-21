@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from typing import Annotated, Any
 
 from bson import ObjectId
@@ -11,6 +12,9 @@ from app.repositories.base import BaseRepository, get_database
 
 
 class TransactionRepository(BaseRepository):
+    def exceeds_row_limit(self, dataset_id: str, limit: int) -> bool:
+        return self.db.transactions.count_documents({'dataset_id': dataset_id}, limit=limit + 1) > limit
+
     def list_keyset(
         self,
         dataset_id: str,
@@ -48,6 +52,11 @@ class TransactionRepository(BaseRepository):
             )
         )
         return int(rows[0]['total']) if rows else 0
+
+    def iter_for_dataset(self, dataset_id: str, limit: int) -> Iterator[dict[str, Any]]:
+        yield from (
+            self.db.transactions.find({'dataset_id': dataset_id}).sort('_id', 1).limit(limit).batch_size(500)
+        )
 
     def get_all_for_dataset(self, dataset_id: str) -> list[dict[str, Any]]:
         return list(self.db.transactions.find({'dataset_id': dataset_id}).sort('_id', 1))

@@ -37,7 +37,7 @@ class UserRepository(BaseRepository):
     def update(self, user_id: str, fields: dict[str, Any]) -> dict[str, Any] | None:
         if not ObjectId.is_valid(user_id):
             return None
-        self.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': fields})
+        self.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': fields, '$inc': {'token_version': 1}})
         return self.get_by_id(user_id)
 
 

@@ -5,7 +5,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Request
 
 from app.core.security import require_role
-from app.schemas.auth import AuthUser
+from app.schemas.auth import AuthUser, PasswordReset
+from app.schemas.common import MessageResponse
 from app.schemas.enums import Role
 from app.schemas.users import UserCreate, UserListResponse, UserResponse, UserUpdate
 from app.services.audit_service import AuditService
@@ -47,7 +48,7 @@ def update_user(
     service: Annotated[UserService, Depends(get_user_service)],
     audit: Annotated[AuditService, Depends(get_audit_service)],
 ) -> UserResponse:
-    result = service.update(user_id, body)
+    result = service.update(user_id, body, actor)
     audit.record(
         actor,
         'user.update',
@@ -57,3 +58,17 @@ def update_user(
         request.state.request_id,
     )
     return result
+
+
+@router.post('/{user_id}/reset-password', response_model=MessageResponse)
+def reset_password(
+    user_id: str,
+    body: PasswordReset,
+    request: Request,
+    actor: Annotated[AuthUser, Depends(require_role(Role.admin))],
+    service: Annotated[UserService, Depends(get_user_service)],
+    audit: Annotated[AuditService, Depends(get_audit_service)],
+) -> MessageResponse:
+    service.reset_password(user_id, body, actor)
+    audit.record(actor, 'user.password.reset', 'user', user_id, {}, request.state.request_id)
+    return MessageResponse(message='Password reset; change required at next sign in')

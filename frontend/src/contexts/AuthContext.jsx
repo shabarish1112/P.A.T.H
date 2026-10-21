@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import {
   api,
   apiRequest,
+  refreshAccessToken,
   clearAccessToken,
   setAccessToken,
   setAuthFailureHandler,
@@ -28,10 +29,10 @@ export function AuthProvider({ children }) {
     const controller = new AbortController();
     async function restoreSession() {
       try {
-        const refreshed = await api.post('/api/auth/refresh', null, { signal: controller.signal });
-        setAccessToken(refreshed.access_token);
+        await refreshAccessToken();
+        if (controller.signal.aborted) return;
         const me = await api.get('/api/auth/me', { signal: controller.signal });
-        setUser(me.user);
+        if (!controller.signal.aborted) setUser(me.user);
       } catch (error) {
         if (error?.name !== 'AbortError') clearSession();
       } finally {

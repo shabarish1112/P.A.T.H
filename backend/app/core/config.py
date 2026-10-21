@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     cors_methods: str = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
     cors_headers: str = 'Authorization,Content-Type,X-Request-ID'
     max_upload_mb: int = Field(default=25, ge=1, le=250)
+    max_rows: int = Field(default=100000, ge=1, le=1000000)
+    ml_max_rows: int = Field(default=50000, ge=2, le=1000000)
+    model_lock_seconds: int = Field(default=300, ge=30, le=3600)
+    host: str = '127.0.0.1'
+    workers: int = Field(default=1, ge=1, le=16)
+    forwarded_allow_ips: str = '127.0.0.1'
     data_retention_days: int = Field(default=365, ge=30, le=3650)
     audit_retention_days: int = Field(default=365, ge=30, le=3650)
 

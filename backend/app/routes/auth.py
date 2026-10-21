@@ -8,10 +8,18 @@ from pydantic import ValidationError
 
 from app.core.config import Settings, get_settings
 from app.core.security import get_current_user
-from app.schemas.auth import AuthUser, LoginRequest, MeResponse, RefreshResponse, TokenResponse
+from app.schemas.auth import (
+    AuthUser,
+    LoginRequest,
+    MeResponse,
+    PasswordChange,
+    RefreshResponse,
+    TokenResponse,
+)
 from app.schemas.common import MessageResponse
+from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
-from app.services.dependencies import get_auth_service
+from app.services.dependencies import get_audit_service, get_auth_service
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 _COOKIE_NAME = 'path_refresh'
@@ -87,3 +95,18 @@ def logout(
 @router.get('/me', response_model=MeResponse, summary='Return the validated authenticated session')
 def me(current_user: Annotated[AuthUser, Depends(get_current_user)]) -> MeResponse:
     return MeResponse(user=current_user)
+
+
+@router.post('/change-password', response_model=MessageResponse)
+def change_password(
+    body: PasswordChange,
+    request: Request,
+    response: Response,
+    actor: Annotated[AuthUser, Depends(get_current_user)],
+    service: Annotated[AuthService, Depends(get_auth_service)],
+    audit: Annotated[AuditService, Depends(get_audit_service)],
+) -> MessageResponse:
+    service.change_password(actor, body)
+    audit.record(actor, 'auth.password.change', 'user', actor.id, {}, request.state.request_id)
+    response.delete_cookie(_COOKIE_NAME, path='/api/auth')
+    return MessageResponse(message='Password changed; sign in again')

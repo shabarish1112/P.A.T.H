@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Datasets from './pages/Datasets';
 import Investigation from './pages/Investigation';
 import Login from './pages/Login';
+import ChangePassword from './pages/ChangePassword';
 import Queue from './pages/Queue';
 import Transactions from './pages/Transactions';
 
@@ -20,6 +21,9 @@ function ProtectedRoute() {
   if (auth.loading) return <AsyncState loading />;
   if (!auth.authenticated)
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (auth.user?.must_change_password && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
   return <Layout />;
 }
 
@@ -35,6 +39,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedRoute />}>
         <Route index element={<Dashboard />} />
+        <Route path="change-password" element={<ChangePassword />} />
         <Route path="datasets" element={<Datasets />} />
         <Route path="transactions" element={<Transactions />} />
         <Route path="control" element={<Control />} />
