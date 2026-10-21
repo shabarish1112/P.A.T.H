@@ -4,24 +4,46 @@ on:
     tags: ['v*']
 permissions:
   contents: read
-  packages: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+    permissions: {contents: read}
   images:
+    needs: quality
     runs-on: ubuntu-latest
+    permissions: {contents: read, packages: write}
+    env:
+      TRIVY_IMAGE: aquasec/trivy:latest@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+      - name: Build, scan and generate SBOMs before any registry push
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p sbom
+          for service in backend frontend; do
+            docker build -t path-$service:release $service
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image --severity HIGH,CRITICAL --exit-code 1 path-$service:release
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/sbom:/out" "$TRIVY_IMAGE" image --format cyclonedx --output /out/$service.cdx.json path-$service:release
+          done
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: ./backend
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/path-backend:${{ github.ref_name }}
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: ./frontend
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/path-frontend:${{ github.ref_name }}
+          name: release-sboms
+          path: sbom/*.cdx.json
+          retention-days: 90
+      - name: Publish only after CI and image scans passed
+        shell: bash
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          for service in backend frontend; do
+            target="ghcr.io/$owner/path-$service:$GITHUB_REF_NAME"
+            docker tag path-$service:release "$target"
+            docker push "$target"
+          done
