@@ -29,7 +29,7 @@ jobs:
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image --severity HIGH,CRITICAL --exit-code 1 path-$service:release
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/sbom:/out" "$TRIVY_IMAGE" image --format cyclonedx --output /out/$service.cdx.json path-$service:release
           done
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-sboms
           path: sbom/*.cdx.json
