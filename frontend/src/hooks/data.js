@@ -3,6 +3,11 @@ import { useCallback } from 'react';
 import { api } from '../services/api';
 import { useApi } from './useApi';
 
+export function useInsights() {
+  const fetcher = useCallback((signal) => api.get('/api/analytics/insights', { signal }), []);
+  return useApi(fetcher, []);
+}
+
 export function useSummary() {
   const fetcher = useCallback((signal) => api.get('/api/analytics/summary', { signal }), []);
   return useApi(fetcher, []);

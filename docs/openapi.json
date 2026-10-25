@@ -1146,6 +1146,50 @@
         }
       }
     },
+    "/api/analytics/insights": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Plain-language analysis and critical records",
+        "operationId": "insights_api_analytics_insights_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisInsightsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or token invalid"
+          },
+          "403": {
+            "description": "Authenticated role is not permitted"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "409": {
+            "description": "State conflict"
+          },
+          "422": {
+            "description": "Request validation failed"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/analytics/summary": {
       "get": {
         "tags": [
@@ -1523,6 +1567,84 @@
   },
   "components": {
     "schemas": {
+      "AnalysisInsightsResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "no_dataset",
+              "not_analyzed",
+              "ready"
+            ],
+            "title": "Status"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "dataset_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Name"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "transaction_count": {
+            "type": "integer",
+            "title": "Transaction Count",
+            "default": 0
+          },
+          "flagged_count": {
+            "type": "integer",
+            "title": "Flagged Count",
+            "default": 0
+          },
+          "critical_count": {
+            "type": "integer",
+            "title": "Critical Count",
+            "default": 0
+          },
+          "narrative": {
+            "type": "string",
+            "title": "Narrative"
+          },
+          "critical_records": {
+            "items": {
+              "$ref": "#/components/schemas/CriticalFinding"
+            },
+            "type": "array",
+            "title": "Critical Records"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "narrative"
+        ],
+        "title": "AnalysisInsightsResponse"
+      },
       "AnalyticsBreakdownItem": {
         "properties": {
           "name": {
@@ -1587,6 +1709,16 @@
       },
       "AnomalyResponse": {
         "properties": {
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentExplanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "id": {
             "type": "string",
             "title": "Id"
@@ -1856,6 +1988,72 @@
           "file"
         ],
         "title": "Body_upload_dataset_api_datasets_upload_post"
+      },
+      "CriticalFinding": {
+        "properties": {
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentExplanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "default": "Critical"
+          },
+          "transaction_id": {
+            "type": "string",
+            "title": "Transaction Id"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "agency": {
+            "type": "string",
+            "title": "Agency"
+          },
+          "vendor": {
+            "type": "string",
+            "title": "Vendor"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "signals": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Signals"
+          },
+          "check": {
+            "type": "string",
+            "title": "Check",
+            "default": ""
+          },
+          "amount_display": {
+            "type": "string",
+            "title": "Amount Display",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "transaction_id",
+          "amount_paise",
+          "agency",
+          "vendor",
+          "score",
+          "signals"
+        ],
+        "title": "CriticalFinding"
       },
       "DatasetDeleteResponse": {
         "properties": {
@@ -2166,6 +2364,54 @@
         ],
         "title": "PasswordReset"
       },
+      "PaymentExplanation": {
+        "properties": {
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "support": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support"
+          },
+          "check_first": {
+            "type": "string",
+            "title": "Check First"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/SignalEvidence"
+            },
+            "type": "array",
+            "title": "Signals"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "amount_display": {
+            "type": "string",
+            "title": "Amount Display"
+          }
+        },
+        "type": "object",
+        "required": [
+          "headline",
+          "check_first",
+          "amount_display"
+        ],
+        "title": "PaymentExplanation"
+      },
       "RefreshResponse": {
         "properties": {
           "access_token": {
@@ -2344,6 +2590,77 @@
         ],
         "title": "RunRequest"
       },
+      "SignalEvidence": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value_text": {
+            "type": "string",
+            "title": "Value Text"
+          },
+          "baseline_text": {
+            "type": "string",
+            "title": "Baseline Text"
+          },
+          "ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratio"
+          },
+          "multiple_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Multiple Text"
+          },
+          "strength": {
+            "type": "string",
+            "enum": [
+              "very_high",
+              "high",
+              "elevated",
+              "normal"
+            ],
+            "title": "Strength",
+            "default": "normal"
+          },
+          "tag": {
+            "type": "string",
+            "title": "Tag"
+          },
+          "help_text": {
+            "type": "string",
+            "title": "Help Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "value_text",
+          "baseline_text",
+          "tag",
+          "help_text"
+        ],
+        "title": "SignalEvidence"
+      },
       "SummaryResponse": {
         "properties": {
           "total_disbursed_paise": {
@@ -2467,6 +2784,71 @@
           "dataset_id": {
             "type": "string",
             "title": "Dataset Id"
+          },
+          "analysis_status": {
+            "type": "string",
+            "enum": [
+              "selected",
+              "not_selected",
+              "not_analyzed"
+            ],
+            "title": "Analysis Status",
+            "default": "not_analyzed"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentExplanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_transactions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Transactions"
+          },
+          "review_actor_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Actor Email"
+          },
+          "review_changed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Changed At"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
           },
           "anomaly_score": {
             "anyOf": [

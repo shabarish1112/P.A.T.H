@@ -8,6 +8,13 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import './index.css';
 
+try {
+  document.documentElement.dataset.theme =
+    localStorage.getItem('path-theme') === 'dark' ? 'dark' : 'light';
+} catch {
+  /* Use the default theme when browser storage is unavailable. */
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>

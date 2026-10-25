@@ -12,6 +12,9 @@ from app.services.review_service import ReviewService
 
 
 class FakeSettingsRepo:
+    def active_run_id(self):
+        return 'run-1'
+
     def get(self, key: str):
         return 'run-1' if key == 'active_run_id' else None
 

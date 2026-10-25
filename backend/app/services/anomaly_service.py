@@ -4,6 +4,7 @@ from app.repositories.anomalies import AnomalyRepository
 from app.repositories.settings import SettingsRepository
 from app.schemas.anomalies import AnomalyListResponse, AnomalyResponse
 from app.schemas.enums import RiskLevel
+from app.services.payment_explanation import explain_payment
 
 
 class AnomalyService:
@@ -12,7 +13,7 @@ class AnomalyService:
         self.settings_repo = settings_repo
 
     def list(self, limit: int, risk: str | None) -> AnomalyListResponse:
-        run_id = self.settings_repo.get('active_run_id')
+        run_id = self.settings_repo.active_run_id()
         if not run_id:
             return AnomalyListResponse(items=[], active_run_id=None)
         docs = self.repo.list_for_run(run_id, limit, risk)
@@ -31,6 +32,7 @@ class AnomalyService:
                     vendor=str(doc['vendor']),
                     district=str(doc['district']),
                     path_insight=doc.get('path_insight', {}),
+                    explanation=explain_payment(doc),
                 )
                 for doc in docs
             ],

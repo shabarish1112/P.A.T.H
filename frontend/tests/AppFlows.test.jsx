@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -8,6 +8,7 @@ import { AuthProvider } from '../src/contexts/AuthContext';
 import { ToastProvider } from '../src/contexts/ToastContext';
 import { clearAccessToken } from '../src/services/api';
 import { server } from './testServer';
+import investigationFixture from './fixtures/investigation.json';
 
 const user = { id: '1', email: 'admin@example.com', role: 'admin', is_active: true };
 const row = {
@@ -31,6 +32,7 @@ let forced;
 let refreshCalls;
 let mutationError;
 let jobStatus;
+let insightStatus;
 
 beforeEach(() => {
   role = 'admin';
@@ -38,6 +40,7 @@ beforeEach(() => {
   refreshCalls = 0;
   mutationError = false;
   jobStatus = 'completed';
+  insightStatus = 'ready';
   clearAccessToken();
   server.use(
     http.post('/api/auth/refresh', () => {
@@ -49,6 +52,32 @@ beforeEach(() => {
     ),
     http.get('/api/*', ({ request }) => {
       const path = new URL(request.url).pathname;
+      if (path === '/api/analytics/insights')
+        return HttpResponse.json({
+          status: insightStatus,
+          narrative:
+            insightStatus === 'ready'
+              ? 'P.A.T.H. analyzed 10 public fund disbursal records from records.csv. One returned alert has Critical priority.'
+              : insightStatus === 'no_dataset'
+                ? 'No active dataset is available yet.'
+                : 'The current upload has not been screened yet.',
+          critical_count: 1,
+          flagged_count: 1,
+          transaction_count: 10,
+          critical_records:
+            insightStatus === 'ready'
+              ? [
+                  {
+                    transaction_id: 'TX-1',
+                    agency: 'Health',
+                    vendor: 'Vendor',
+                    amount_paise: 10000,
+                    score: 0.99,
+                    signals: ['Payment amount is 4.00 times the vendor average in this dataset.'],
+                  },
+                ]
+              : [],
+        });
       if (path === '/api/analytics/summary')
         return HttpResponse.json({
           total_disbursed_paise: metric,
@@ -144,7 +173,12 @@ function mount(path = '/') {
 }
 
 async function open(label) {
-  fireEvent.click(await screen.findByRole('link', { name: label, exact: true }));
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Page navigation' })).getByRole('link', {
+      name: label,
+      exact: true,
+    }),
+  );
 }
 
 describe('real application flows with mocked HTTP boundaries', () => {
@@ -154,12 +188,13 @@ describe('real application flows with mocked HTTP boundaries', () => {
     expect(refreshCalls).toBe(1);
     await open('Visual Analytics');
     expect(await screen.findByText('Health')).toBeInTheDocument();
-    await open('Review Queue');
+    await open('Review history');
     expect(await screen.findByText('Check source')).toBeInTheDocument();
     await open('Investigation');
-    expect(await screen.findByText(/Search for or select a transaction/)).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Search transaction ID'), { target: { value: 'TX-1' } });
-    fireEvent.submit(screen.getByRole('search'));
+    expect(await screen.findByText(/Search for a transaction or select one/)).toBeInTheDocument();
+    expect(screen.queryByRole('search')).not.toBeInTheDocument();
+    await open('Transactions');
+    fireEvent.click(await screen.findByText('TX-1'));
     expect(await screen.findByText('Transaction context')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Escalated' } });
     fireEvent.change(screen.getByLabelText('Review note'), {
@@ -193,6 +228,8 @@ describe('real application flows with mocked HTTP boundaries', () => {
     fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'reviewer' } });
     fireEvent.submit(screen.getByRole('button', { name: 'Create user' }).closest('form'));
     expect(await screen.findByText('User created.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss notification' }));
+    expect(screen.queryByText('User created.')).not.toBeInTheDocument();
     mutationError = true;
     fireEvent.submit(screen.getByRole('button', { name: 'Create user' }).closest('form'));
     expect(await screen.findByText('Action rejected')).toBeInTheDocument();
@@ -261,6 +298,11 @@ describe('real application flows with mocked HTTP boundaries', () => {
     await screen.findByRole('heading', { name: 'Executive Dashboard' });
     expect(screen.queryByRole('link', { name: 'Access & Audit' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    expect(screen.getByRole('dialog', { name: 'Primary navigation' })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveFocus();
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close navigation' }));
     fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
@@ -270,5 +312,172 @@ describe('real application flows with mocked HTTP boundaries', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByRole('heading', { name: 'Executive Dashboard' })).toBeInTheDocument();
+  });
+});
+
+describe('guided analysis and human review', () => {
+  it('takes a critical finding through investigation to recorded history', async () => {
+    const decisions = [];
+    server.use(
+      http.put('/api/reviews/:id', async ({ request, params }) => {
+        const body = await request.json();
+        decisions.push({
+          id: 'new-review',
+          transaction_id: params.id,
+          actor_email: user.email,
+          created_at: row.date,
+          ...body,
+        });
+        return HttpResponse.json(decisions[0]);
+      }),
+      http.get('/api/reviews', () => HttpResponse.json({ items: decisions })),
+    );
+    mount();
+    expect(await screen.findByText(/P.A.T.H. analyzed 10 public fund/)).toBeInTheDocument();
+    expect(screen.getByText(/4.00 times the vendor average/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: 'Investigate TX-1' }));
+    await screen.findByText('Transaction context');
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'False Alert' } });
+    fireEvent.change(screen.getByLabelText('Review note'), {
+      target: { value: 'Verified the source invoice.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Record decision' }));
+    await screen.findByText(/Review action recorded/);
+    fireEvent.click(await screen.findByRole('link', { name: 'View review history' }));
+    expect(await screen.findByText('Verified the source invoice.')).toBeInTheDocument();
+    expect(screen.getByText('False Alert', { selector: '.badge' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: 'TX-1' }));
+    expect(await screen.findByText('Transaction context')).toBeInTheDocument();
+  });
+
+  it('explains missing data, onboarding, and the next upload action', async () => {
+    insightStatus = 'no_dataset';
+    mount();
+    expect(await screen.findByRole('link', { name: 'Upload a dataset' })).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/About P.A.T.H.:/));
+    expect(screen.getByText(/uses unsupervised machine learning/)).toBeInTheDocument();
+  });
+
+  it('offers model execution for an uploaded but unprocessed dataset', async () => {
+    insightStatus = 'not_analyzed';
+    mount();
+    fireEvent.click(await screen.findByRole('link', { name: 'Run an analysis' }));
+    expect(
+      await screen.findByRole('heading', { name: 'ML Anomaly Control Center' }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows guided review history instead of fabricated events and supports transaction lookup', async () => {
+    server.use(http.get('/api/reviews', () => HttpResponse.json({ items: [] })));
+    mount('/queue');
+    expect(await screen.findByText('No review decisions have been recorded.')).toBeInTheDocument();
+    expect(
+      screen.getByText(/transaction ID, reviewer, status, note, and time/),
+    ).toBeInTheDocument();
+    await open('Investigation');
+    fireEvent.change(screen.getByLabelText('Transaction ID'), { target: { value: 'TX-1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Open investigation' }));
+    expect(await screen.findByText('Transaction context')).toBeInTheDocument();
+  });
+
+  it('opens the critical risk filter from the summary and handles no critical records', async () => {
+    server.use(
+      http.get('/api/analytics/insights', () =>
+        HttpResponse.json({
+          status: 'ready',
+          narrative: 'Screening completed.',
+          critical_count: 0,
+          critical_records: [],
+        }),
+      ),
+    );
+    mount();
+    expect(await screen.findByText(/No records in the returned alerts/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: 'View critical results' }));
+    expect(await screen.findByLabelText('Risk')).toHaveValue('Critical');
+  });
+});
+
+describe('understandable investigation workflow', () => {
+  it('shows evidence, date-only context and persists a plain-language review action', async () => {
+    let current = { ...investigationFixture };
+    let saved;
+    server.use(
+      http.get('/api/transactions/TX-002562', () => HttpResponse.json(current)),
+      http.put('/api/reviews/TX-002562', async ({ request }) => {
+        saved = await request.json();
+        current = {
+          ...current,
+          review_status: saved.status,
+          review_note: saved.note,
+          review_actor_email: 'reviewer@example.com',
+          review_changed_at: '2026-10-25T10:00:00Z',
+        };
+        return HttpResponse.json(current);
+      }),
+    );
+    mount('/investigation/TX-002562');
+    expect(await screen.findByText(investigationFixture.explanation.headline)).toBeInTheDocument();
+    expect(screen.getByText('14 Apr 2024')).toBeInTheDocument();
+    expect(screen.getByText('2024-25')).toBeInTheDocument();
+    expect(screen.getByText('#1 of 4,000')).toBeInTheDocument();
+    expect(screen.getByText('First payment on record')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Confirm for investigation' })).toHaveValue(
+      'Confirmed Finding',
+    );
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'False Alert' } });
+    fireEvent.change(screen.getByLabelText('Review note'), {
+      target: { value: 'Checked the invoice.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Record decision' }));
+    expect(await screen.findByText(/Last changed by reviewer@example.com/)).toBeInTheDocument();
+    expect(saved).toEqual({ status: 'False Alert', note: 'Checked the invoice.' });
+    expect(screen.getByLabelText('Review note')).toHaveValue('Checked the invoice.');
+  });
+});
+
+describe('investigation outside the saved alert list', () => {
+  it('shows available evidence without inventing model results', async () => {
+    server.use(
+      http.get('/api/transactions/TX-002562', () =>
+        HttpResponse.json({
+          ...investigationFixture,
+          analysis_status: 'not_selected',
+          risk: null,
+          anomaly_score: null,
+          rank: null,
+        }),
+      ),
+    );
+    mount('/investigation/TX-002562');
+    expect(await screen.findByRole('heading', { name: 'Payment comparisons' })).toBeInTheDocument();
+    expect(screen.getByText('Outside saved alert list', { exact: true })).toBeInTheDocument();
+    expect(
+      screen.getByText('Not saved outside the alert list', { exact: true }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('First payment on record')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Payment evidence' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Why this was flagged' })).not.toBeInTheDocument();
+  });
+  it('shows comparisons before a run and does not offer an unavailable review mutation', async () => {
+    server.use(
+      http.get('/api/transactions/TX-002562', () =>
+        HttpResponse.json({
+          ...investigationFixture,
+          analysis_status: 'not_analyzed',
+          risk: null,
+          anomaly_score: null,
+          rank: null,
+        }),
+      ),
+    );
+    mount('/investigation/TX-002562');
+    expect(
+      await screen.findByText(
+        'These are payment comparisons. Run an analysis to select records for review.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Payment evidence' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Record decision' })).not.toBeInTheDocument();
   });
 });

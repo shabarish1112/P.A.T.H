@@ -269,6 +269,13 @@
       }
     },
     {
+      "name": "Plain-language analysis and critical records",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/analytics/insights"
+      }
+    },
+    {
       "name": "Executive analytics summary",
       "request": {
         "method": "GET",

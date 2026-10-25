@@ -1,3 +1,5 @@
+import { PageHeader } from '../components/PageHeader';
+import { AnalysisSummary } from '../components/AnalysisSummary';
 import { AsyncState } from '../components/AsyncState';
 import { LineChart } from '../components/Charts';
 import { useSummary, useTrend } from '../hooks/data';
@@ -7,7 +9,13 @@ function MetricCard({ label, metric, money = false }) {
   return (
     <article className="metric-card">
       <span>{label}</span>
-      <strong>{money ? formatMoney(metric?.value) : formatNumber(metric?.value)}</strong>
+      <strong>
+        {metric?.value == null
+          ? '—'
+          : money
+            ? formatMoney(metric.value)
+            : formatNumber(metric.value)}
+      </strong>
       <small>
         {metric?.delta_percent == null
           ? 'No comparison run'
@@ -23,17 +31,16 @@ export default function Dashboard() {
 
   return (
     <>
-      <header className="page-heading">
-        <div>
-          <p className="eyebrow">Today</p>
-          <h1>Executive Dashboard</h1>
-          <p>Operational screening overview for the active dataset and model run.</p>
-        </div>
-      </header>
+      <PageHeader
+        title="Executive Dashboard"
+        description="Operational screening overview for the active dataset and model run."
+        eyebrow="Workspace overview"
+      />
       <AsyncState
         loading={summary.loading}
         error={summary.error}
         empty={!summary.data}
+        emptyMessage="No active dataset is available."
         onRetry={summary.retry}
       >
         {summary.data ? (
@@ -62,20 +69,22 @@ export default function Dashboard() {
             loading={trend.loading}
             error={trend.error}
             empty={!trend.data?.points?.length}
+            emptyMessage="No anomaly screening results are available yet."
             onRetry={trend.retry}
           >
             <LineChart points={trend.data?.points || []} />
           </AsyncState>
         </section>
-        <section className="panel">
+        <section className="panel review-capacity">
           <p className="eyebrow">Review capacity</p>
-          <h2>{summary.data?.review_capacity || 0}</h2>
+          <h2>{summary.data?.review_capacity ?? '—'}</h2>
           <p className="muted">Top-K alerts available to reviewers in the active cycle.</p>
           <div className="principle-card compact">
             <span className="principle-dot" /> Unusual ≠ Fraudulent
           </div>
         </section>
       </div>
+      <AnalysisSummary />
     </>
   );
 }

@@ -15,3 +15,16 @@ export function formatPercent(value) {
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(2)}%`;
 }
+
+export function formatPaymentDate(value) {
+  const day = typeof value === 'string' ? value.slice(0, 10) : '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return 'Date unavailable';
+  const date = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}

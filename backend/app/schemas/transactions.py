@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.enums import RiskLevel
+from app.schemas.explanations import PaymentExplanation
 
 
 class CsvTransactionRow(BaseModel):
@@ -57,6 +59,12 @@ class TransactionListResponse(BaseModel):
 
 
 class TransactionDetailResponse(TransactionResponse):
+    analysis_status: Literal['selected', 'not_selected', 'not_analyzed'] = 'not_analyzed'
+    explanation: PaymentExplanation | None = None
+    total_transactions: int | None = None
+    review_actor_email: str | None = None
+    review_changed_at: datetime | None = None
+    review_note: str | None = None
     anomaly_score: float | None = None
     risk: RiskLevel | None = None
     rank: int | None = None

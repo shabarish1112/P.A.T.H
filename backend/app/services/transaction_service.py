@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from app.repositories.settings import SettingsRepository
 from app.repositories.transactions import TransactionRepository
 from app.schemas.transactions import TransactionDetailResponse, TransactionListResponse, TransactionResponse
+from app.services.payment_explanation import explain_payment
 
 
 def _serialize_transaction(doc: dict[str, object]) -> TransactionResponse:
@@ -31,18 +32,30 @@ class TransactionService:
         dataset_id = self.settings_repo.get('active_dataset_id')
         if not dataset_id:
             raise HTTPException(status_code=404, detail='No active dataset')
-        run_id = self.settings_repo.get('active_run_id')
+        run_id = self.settings_repo.active_run_id()
         doc = self.repo.detail_with_context(dataset_id, run_id, transaction_id)
         if not doc:
             raise HTTPException(status_code=404, detail='Transaction not found')
         base = _serialize_transaction(doc).model_dump()
         anomaly = doc.get('anomaly') or {}
         review = doc.get('review') or {}
+        context = self.repo.explanation_context(dataset_id, doc)
+        signals = anomaly.get('path_insight') or self.repo.contextual_signals(dataset_id, doc, context)
         return TransactionDetailResponse(
             **base,
+            explanation=explain_payment(
+                {**base, 'path_insight': signals},
+                context,
+                selected_for_review=bool(anomaly),
+            ),
+            analysis_status='selected' if anomaly else 'not_selected' if run_id else 'not_analyzed',
+            total_transactions=self.repo.estimated_count(dataset_id),
+            review_actor_email=review.get('actor_email'),
+            review_changed_at=review.get('created_at'),
+            review_note=review.get('note'),
             anomaly_score=anomaly.get('score'),
             risk=anomaly.get('risk'),
             rank=anomaly.get('rank'),
             review_status=review.get('status'),
-            path_insight=anomaly.get('path_insight'),
+            path_insight=signals,
         )

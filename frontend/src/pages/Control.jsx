@@ -1,3 +1,4 @@
+import { PageHeader } from '../components/PageHeader';
 import { useEffect, useState } from 'react';
 
 import { MODEL_OPTIONS } from '../constants';
@@ -64,73 +65,95 @@ export default function Control() {
 
   return (
     <>
-      <header className="page-heading">
-        <div>
-          <p className="eyebrow">Model orchestration</p>
-          <h1>ML Anomaly Control Center</h1>
-          <p>
-            One run executes at a time. Results activate only after the new run is written
-            successfully.
-          </p>
-        </div>
-      </header>
-      <section className="panel">
-        <form className="control-grid" onSubmit={run}>
-          <label>
-            Model
-            <select value={model} onChange={(event) => setModel(event.target.value)}>
-              {MODEL_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Alert budget (Top-K)
-            <input
-              type="number"
-              min="1"
-              max="5000"
-              value={topK}
-              onChange={(event) => setTopK(event.target.value)}
-            />
-          </label>
-          <label>
-            Trees
-            <input
-              type="number"
-              min="50"
-              max="1000"
-              value={trees}
-              onChange={(event) => setTrees(event.target.value)}
-            />
-          </label>
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={includeUmap}
-              onChange={(event) => setIncludeUmap(event.target.checked)}
-            />{' '}
-            Generate optional UMAP sample
-          </label>
-          <button type="submit" className="button primary" disabled={running}>
-            {running ? 'Run in progress…' : 'Run model'}
-          </button>
-        </form>
-        {job ? (
-          <div className="job-progress" aria-live="polite">
-            <div>
-              <strong>{job.status}</strong>
-              <span>{job.message}</span>
+      <PageHeader
+        title="ML Anomaly Control Center"
+        description="One run executes at a time. Results activate only after the new run is written successfully."
+        eyebrow="Model orchestration"
+      />
+      <div className="dashboard-grid">
+        <section className="panel">
+          <h2>Run configuration</h2>
+          <p className="panel-description">Choose the screening model and alert budget.</p>
+          <form className="control-grid" onSubmit={run}>
+            <label>
+              Model
+              <select
+                aria-label="Model"
+                aria-describedby="model-help"
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
+              >
+                {MODEL_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <span id="model-help" className="field-help">
+                Algorithm used to rank unusual transactions.
+              </span>
+            </label>
+            <label>
+              Alert budget (Top-K)
+              <input
+                type="number"
+                min="1"
+                max="5000"
+                aria-label="Alert budget (Top-K)"
+                aria-describedby="budget-help"
+                value={topK}
+                onChange={(event) => setTopK(event.target.value)}
+              />
+              <span id="budget-help" className="field-help">
+                Maximum number of alerts returned for review.
+              </span>
+            </label>
+            <label>
+              Trees
+              <input
+                type="number"
+                min="50"
+                max="1000"
+                aria-label="Trees"
+                aria-describedby="trees-help"
+                value={trees}
+                onChange={(event) => setTrees(event.target.value)}
+              />
+              <span id="trees-help" className="field-help">
+                Model complexity: 50–1,000 trees.
+              </span>
+            </label>
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={includeUmap}
+                onChange={(event) => setIncludeUmap(event.target.checked)}
+              />{' '}
+              Generate optional UMAP sample
+            </label>
+            <button type="submit" className="button primary" disabled={running}>
+              {running ? 'Run in progress…' : 'Run model'}
+            </button>
+          </form>
+        </section>
+        <section className="panel">
+          <h2>Run status</h2>
+          {job ? (
+            <div className="job-progress" aria-live="polite">
+              <div>
+                <strong>{job.status}</strong>
+                <span>{job.message}</span>
+              </div>
+              <progress aria-label="Model run progress" value={job.progress} max="100">
+                {job.progress}%
+              </progress>
+              <span>{job.progress}%</span>
             </div>
-            <progress value={job.progress} max="100">
-              {job.progress}%
-            </progress>
-            <span>{job.progress}%</span>
-          </div>
-        ) : null}
-      </section>
+          ) : (
+            <div className="async-state">No run has been started in this session.</div>
+          )}
+        </section>
+      </div>
     </>
   );
 }

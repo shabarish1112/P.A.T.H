@@ -1,0 +1,89 @@
+{
+  "transaction_id": "TX-002562",
+  "vendor": "Vendor-212",
+  "agency": "Education",
+  "scheme": "School Upgrade",
+  "district": "Kalaburagi",
+  "amount_paise": 833656000,
+  "date": "2024-04-14T00:00:00Z",
+  "risk": "Critical",
+  "anomaly_score": 0.99,
+  "rank": 1,
+  "total_transactions": 4000,
+  "review_status": "Pending Review",
+  "path_insight": {
+    "amount_vs_vendor_mean": 7.652,
+    "amount_vs_agency_mean": 12.271,
+    "amount_vs_scheme_mean": 12.271,
+    "vendor_transactions_30d": 1,
+    "days_since_previous_vendor_payment": 365,
+    "scheme_utilization": 0.0632,
+    "fiscal_year": "2024-25"
+  },
+  "explanation": {
+    "headline": "Vendor-212 was paid ₹83.4 lakh by Education, about 12 times the typical payment in this agency and scheme.",
+    "support": "It is also about 7.7 times this vendor's usual payment.",
+    "check_first": "Check: the sanction and approval for this amount.",
+    "signals": [
+      {
+        "key": "amount_vs_agency_scheme_mean",
+        "label": "Typical agency and scheme payment",
+        "value_text": "₹83.4 lakh",
+        "baseline_text": "About ₹6.8 lakh",
+        "ratio": 12.271,
+        "multiple_text": "About 12x",
+        "strength": "very_high",
+        "tag": "Very high",
+        "help_text": "This payment is about 12 times the average payment amount in this agency and scheme. The average uses your uploaded file, including this payment. The average shown is an estimate."
+      },
+      {
+        "key": "amount_vs_vendor_mean",
+        "label": "Vendor's usual payment",
+        "value_text": "₹83.4 lakh",
+        "baseline_text": "About ₹10.9 lakh",
+        "ratio": 7.652,
+        "multiple_text": "About 7.7x",
+        "strength": "high",
+        "tag": "High",
+        "help_text": "This payment is about 7.7 times the average amount paid to this vendor. The average uses your uploaded file, including this payment. The average shown is an estimate."
+      },
+      {
+        "key": "vendor_transactions_30d",
+        "label": "Vendor payments in 30 days",
+        "value_text": "1 payment",
+        "baseline_text": "30-day window ending on this payment, including this payment",
+        "ratio": null,
+        "multiple_text": null,
+        "strength": "normal",
+        "tag": "Normal",
+        "help_text": "This vendor received 1 payment in the 30 days up to this transaction, including this payment. This count alone does not show a problem."
+      },
+      {
+        "key": "days_since_previous_vendor_payment",
+        "label": "Previous vendor payment",
+        "value_text": "First payment on record",
+        "baseline_text": "Within this uploaded dataset",
+        "ratio": null,
+        "multiple_text": null,
+        "strength": "normal",
+        "tag": "Context",
+        "help_text": "This is the earliest payment to this vendor in your uploaded file. Your file does not tell us whether the vendor was paid before that."
+      },
+      {
+        "key": "scheme_utilization",
+        "label": "Scheme spending against supplied sanction",
+        "value_text": "6.3%",
+        "baseline_text": "Largest supplied sanction for this scheme and financial year",
+        "ratio": null,
+        "multiple_text": null,
+        "strength": "normal",
+        "tag": "Context",
+        "help_text": "Up to and including this payment, the recorded scheme payments add up to 6.3% of the highest approved amount listed for this scheme and financial year. This uses only the amounts in your file."
+      }
+    ],
+    "tags": [
+      "Unusually large payment"
+    ],
+    "amount_display": "₹83.4 lakh"
+  }
+}

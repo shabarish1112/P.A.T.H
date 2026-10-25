@@ -208,6 +208,12 @@ The visualizer writes `frontend/dist/stats.html`.
 
 See `docs/DEPLOYMENT_SECURITY.md`. `docker-compose.prod.yml` puts Caddy at the public edge, requires Mongo TLS inside the private network, and configures Redis for multi-worker cache coherence.
 
+## Guided analysis and review
+
+The dashboard's **Analysis summary** describes the active dataset and completed run in plain language, with links to up to five highest-ranked Critical records. `GET /api/analytics/insights` returns the narrative, complete alert counts, and observed comparison features. Text is generated deterministically from stored analysis results; no external language-model service is used. Feature comparisons provide context, not causal model attribution or proof of fraud. Critical priority follows the model's 99th-percentile threshold, including ties, within the returned alert budget.
+
+Upload a CSV → run a model in **ML Control** → select a record in the summary or **Anomaly Explorer** → investigate → record a decision as a reviewer/admin → open **Review history**. The history table shows real saved decisions for the active run; it does not fabricate events or represent case assignments. The application context banner and empty states explain each step. Results from an older dataset are not shown as analysis of a new upload. Restart the backend after updating to expose the new endpoint.
+
 ## API
 
 - `docs/API.md`

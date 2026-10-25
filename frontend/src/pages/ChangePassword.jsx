@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
+import { PageHeader } from '../components/PageHeader';
 
 export default function ChangePassword() {
   const { clearSession } = useAuth();
@@ -28,41 +29,54 @@ export default function ChangePassword() {
     }
   }
   return (
-    <section className="panel">
-      <h1>Change password</h1>
-      <p>Choose a new password of at least 12 characters. You will sign in again afterwards.</p>
-      <form className="review-form" onSubmit={submit}>
-        <label>
-          Current password
-          <input name="current_password" type="password" autoComplete="current-password" required />
-        </label>
-        <label>
-          New password
-          <input
-            name="new_password"
-            type="password"
-            autoComplete="new-password"
-            minLength={12}
-            maxLength={128}
-            required
-          />
-        </label>
-        <label>
-          Confirm new password
-          <input
-            name="confirm_password"
-            type="password"
-            autoComplete="new-password"
-            minLength={12}
-            maxLength={128}
-            required
-          />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        <button className="button primary" disabled={busy}>
-          {busy ? 'Changing…' : 'Change password'}
-        </button>
-      </form>
-    </section>
+    <>
+      <PageHeader
+        title="Change password"
+        description="Use at least 12 characters. You will sign in again after changing your password."
+      />
+      <section className="panel password-panel">
+        <form className="review-form" onSubmit={submit}>
+          <label>
+            Current password
+            <input
+              name="current_password"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <label>
+            New password
+            <input
+              name="new_password"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+          </label>
+          <label>
+            Confirm new password
+            <input
+              name="confirm_password"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+          </label>
+          {error && (
+            <p className="field-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="button primary" disabled={busy}>
+            {busy ? 'Changing…' : 'Change password'}
+          </button>
+        </form>
+      </section>
+    </>
   );
 }

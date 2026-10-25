@@ -7,13 +7,33 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query, Response
 
 from app.core.security import require_role
-from app.schemas.analytics import AnalyticsBreakdownResponse, SummaryResponse, TrendResponse
+from app.schemas.analytics import (
+    AnalysisInsightsResponse,
+    AnalyticsBreakdownResponse,
+    SummaryResponse,
+    TrendResponse,
+)
 from app.schemas.auth import AuthUser
 from app.schemas.enums import Role
 from app.services.analytics_service import AnalyticsService
-from app.services.dependencies import get_analytics_service
+from app.services.dependencies import get_analytics_service, get_insight_service
+from app.services.insight_service import InsightService
 
 router = APIRouter(prefix='/analytics', tags=['Analytics'])
+
+
+@router.get(
+    '/insights',
+    response_model=AnalysisInsightsResponse,
+    summary='Plain-language analysis and critical records',
+)
+def insights(
+    response: Response,
+    _: Annotated[AuthUser, Depends(require_role(Role.analyst, Role.reviewer, Role.admin))],
+    service: Annotated[InsightService, Depends(get_insight_service)],
+) -> AnalysisInsightsResponse:
+    response.headers['Cache-Control'] = 'private, no-store'
+    return service.summary()
 
 
 def _cache_headers(response: Response, payload: object) -> None:

@@ -15,8 +15,11 @@ class AnomalyRepository(BaseRepository):
             filt['risk'] = risk
         return list(self.db.anomalies.find(filt).sort('rank', 1).limit(limit))
 
-    def count_for_run(self, run_id: str) -> int:
-        return self.db.anomalies.count_documents({'run_id': run_id})
+    def count_for_run(self, run_id: str, risk: str | None = None) -> int:
+        filt = {'run_id': run_id}
+        if risk:
+            filt['risk'] = risk
+        return self.db.anomalies.count_documents(filt)
 
     def sum_flagged_volume(self, run_id: str) -> int:
         result = list(

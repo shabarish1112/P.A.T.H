@@ -1,3 +1,4 @@
+import { PageHeader } from '../components/PageHeader';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,17 +20,20 @@ export default function Transactions() {
     { key: 'agency', label: 'Agency' },
     { key: 'scheme', label: 'Scheme' },
     { key: 'vendor', label: 'Vendor' },
-    { key: 'amount', label: 'Amount', render: (row) => formatMoney(row.amount_paise) },
+    {
+      key: 'amount',
+      align: 'right',
+      label: 'Amount',
+      render: (row) => formatMoney(row.amount_paise),
+    },
   ];
   return (
     <>
-      <header className="page-heading">
-        <div>
-          <p className="eyebrow">System of record view</p>
-          <h1>Master Transactions</h1>
-          <p>Authorized disbursal records from the active dataset.</p>
-        </div>
-      </header>
+      <PageHeader
+        title="Master Transactions"
+        description="Authorized disbursal records from the active dataset."
+        eyebrow="System of record view"
+      />
       <section className="panel">
         <div className="toolbar">
           <label className="search-field">
@@ -50,9 +54,13 @@ export default function Transactions() {
           loading={state.loading}
           error={state.error}
           empty={!state.data?.items?.length}
+          emptyMessage={
+            query ? 'No transactions match this search.' : 'No active dataset is available.'
+          }
           onRetry={state.retry}
         >
           <DataTable
+            label="Transactions"
             columns={columns}
             rows={state.data?.items || []}
             rowKey={(row) => row.id}

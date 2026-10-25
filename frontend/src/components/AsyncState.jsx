@@ -1,7 +1,14 @@
-export function AsyncState({ loading, error, empty, onRetry, children }) {
+export function AsyncState({
+  loading,
+  error,
+  empty,
+  emptyMessage = 'No records are available yet.',
+  onRetry,
+  children,
+}) {
   if (loading) {
     return (
-      <div className="async-state" aria-live="polite">
+      <div className="async-state" role="status" aria-live="polite" aria-busy="true">
         <span className="spinner" aria-hidden="true" /> Loading…
       </div>
     );
@@ -20,7 +27,7 @@ export function AsyncState({ loading, error, empty, onRetry, children }) {
     );
   }
   if (empty) {
-    return <div className="async-state">No data is available for this view yet.</div>;
+    return <div className="async-state">{emptyMessage}</div>;
   }
   return children;
 }

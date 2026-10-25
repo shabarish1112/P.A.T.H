@@ -24,6 +24,7 @@ describe('Datasets', () => {
     const file = new File(['x'], 'data.csv', { type: 'text/csv' });
     await user.upload(screen.getByLabelText('CSV file'), file);
     fireEvent.submit(screen.getByRole('button', { name: 'Upload and validate' }).closest('form'));
-    expect(await screen.findByText(/Row 3: bad date/)).toBeInTheDocument();
+    expect(await screen.findByText('Row 3')).toBeInTheDocument();
+    expect(screen.getByText('bad date')).toBeInTheDocument();
   });
 });

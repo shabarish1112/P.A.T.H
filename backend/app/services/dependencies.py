@@ -20,10 +20,20 @@ from app.services.anomaly_service import AnomalyService
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 from app.services.dataset_service import DatasetService
+from app.services.insight_service import InsightService
 from app.services.model_service import ModelService
 from app.services.review_service import ReviewService
 from app.services.transaction_service import TransactionService
 from app.services.user_service import UserService
+
+
+def get_insight_service(
+    datasets: Annotated[DatasetRepository, Depends(get_dataset_repository)],
+    settings: Annotated[SettingsRepository, Depends(get_settings_repository)],
+    models: Annotated[ModelRepository, Depends(get_model_repository)],
+    anomalies: Annotated[AnomalyRepository, Depends(get_anomaly_repository)],
+) -> InsightService:
+    return InsightService(datasets, settings, models, anomalies)
 
 
 def get_cache_dependency(settings: Annotated[Settings, Depends(get_settings)]) -> CacheBackend:

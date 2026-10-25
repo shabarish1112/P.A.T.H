@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
+from datetime import timedelta
 from typing import Annotated, Any
 
 from bson import ObjectId
@@ -60,6 +61,105 @@ class TransactionRepository(BaseRepository):
 
     def get_all_for_dataset(self, dataset_id: str) -> list[dict[str, Any]]:
         return list(self.db.transactions.find({'dataset_id': dataset_id}).sort('_id', 1))
+
+    def explanation_context(self, dataset_id: str, doc: dict[str, Any]) -> dict[str, Any]:
+        context: dict[str, Any] = {}
+        for field in ('vendor', 'agency', 'scheme'):
+            if not doc.get(field):
+                continue
+            values = list(
+                self.db.transactions.aggregate(
+                    [
+                        {'$match': {'dataset_id': dataset_id, field: doc[field]}},
+                        {'$group': {'_id': None, 'mean': {'$avg': '$amount_paise'}}},
+                    ]
+                )
+            )
+            if values:
+                context[f'{field}_mean_paise'] = values[0]['mean']
+        # Match feature engineering's stable date ordering, including same-day payments.
+        first = self.db.transactions.find_one(
+            {'dataset_id': dataset_id, 'vendor': doc.get('vendor')},
+            sort=[('date', 1), ('_id', 1)],
+        )
+        if first:
+            context['first_payment'] = first['transaction_id'] == doc['transaction_id']
+        return context
+
+    def contextual_signals(
+        self, dataset_id: str, doc: dict[str, Any], context: dict[str, Any]
+    ) -> dict[str, float | int | str]:
+        """Calculate payment facts for records outside the saved Top-K; never score them."""
+        date = doc['date']
+        start_year = date.year if date.month >= 4 else date.year - 1
+        fy_start = date.replace(year=start_year, month=4, day=1, hour=0, minute=0, second=0, microsecond=0)
+        fy_end = fy_start.replace(year=start_year + 1)
+        earlier = {
+            '$or': [
+                {'date': {'$lt': date}},
+                {'date': date, '_id': {'$lt': doc['_id']}},
+            ]
+        }
+        prior = self.db.transactions.find_one(
+            {'dataset_id': dataset_id, 'vendor': doc['vendor'], **earlier},
+            sort=[('date', -1), ('_id', -1)],
+        )
+        frequency = self.db.transactions.count_documents(
+            {
+                'dataset_id': dataset_id,
+                'vendor': doc['vendor'],
+                'date': {'$gte': date - timedelta(days=30), '$lte': date},
+            }
+        )
+        scheme_year = {
+            'dataset_id': dataset_id,
+            'scheme': doc['scheme'],
+            'date': {'$gte': fy_start, '$lt': fy_end},
+        }
+        budget_rows = list(
+            self.db.transactions.aggregate(
+                [
+                    {'$match': scheme_year},
+                    {'$group': {'_id': None, 'budget': {'$max': '$sanctioned_amount_paise'}}},
+                ]
+            )
+        )
+        # Match the stable date/insertion ordering used by feature engineering, including this record.
+        spend_rows = list(
+            self.db.transactions.aggregate(
+                [
+                    {
+                        '$match': {
+                            '$and': [
+                                scheme_year,
+                                {
+                                    '$or': [
+                                        {'date': {'$lt': date}},
+                                        {'date': date, '_id': {'$lte': doc['_id']}},
+                                    ]
+                                },
+                            ]
+                        }
+                    },
+                    {'$group': {'_id': None, 'spend': {'$sum': '$amount_paise'}}},
+                ]
+            )
+        )
+        budget = budget_rows[0].get('budget', 0) if budget_rows else 0
+        spend = spend_rows[0]['spend'] if spend_rows else 0
+        signals: dict[str, float | int | str] = {
+            f'amount_vs_{group}_mean': round(doc['amount_paise'] / max(context[f'{group}_mean_paise'], 1), 3)
+            for group in ('vendor', 'agency', 'scheme')
+        }
+        signals.update(
+            {
+                'vendor_transactions_30d': frequency,
+                'days_since_previous_vendor_payment': max((date - prior['date']).days, 0) if prior else 365,
+                'scheme_utilization': round(spend / budget, 4) if budget else 0.0,
+                'fiscal_year': f'{start_year}-{str(start_year + 1)[-2:]}',
+            }
+        )
+        return signals
 
     def detail_with_context(
         self, dataset_id: str, run_id: str | None, transaction_id: str

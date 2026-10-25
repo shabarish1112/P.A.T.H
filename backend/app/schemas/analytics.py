@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+from app.schemas.explanations import PaymentExplanation
 
 
 class DeltaMetric(BaseModel):
@@ -37,3 +41,28 @@ class AnalyticsBreakdownItem(BaseModel):
 
 class AnalyticsBreakdownResponse(BaseModel):
     items: list[AnalyticsBreakdownItem]
+
+
+class CriticalFinding(BaseModel):
+    explanation: PaymentExplanation | None = None
+    priority: str = 'Critical'
+    transaction_id: str
+    amount_paise: int
+    agency: str
+    vendor: str
+    score: float
+    signals: list[str]
+    check: str = ''
+    amount_display: str = ''
+
+
+class AnalysisInsightsResponse(BaseModel):
+    status: Literal['no_dataset', 'not_analyzed', 'ready']
+    dataset_id: str | None = None
+    dataset_name: str | None = None
+    run_id: str | None = None
+    transaction_count: int = 0
+    flagged_count: int = 0
+    critical_count: int = 0
+    narrative: str
+    critical_records: list[CriticalFinding] = Field(default_factory=list)

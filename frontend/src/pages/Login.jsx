@@ -47,6 +47,10 @@ export default function Login() {
         </div>
       </section>
       <section className="login-panel">
+        <div className="login-brand-heading">
+          <span className="path-mark large">P</span>
+          <span>P.A.T.H.</span>
+        </div>
         <form className="login-form" onSubmit={submit}>
           <p className="eyebrow">Secure workspace</p>
           <h2>Sign in</h2>

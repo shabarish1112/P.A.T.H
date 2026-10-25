@@ -13,3 +13,15 @@ export const ROLE_CAPABILITIES = {
   reviewer: { review: true, admin: false },
   admin: { review: true, admin: true },
 };
+
+export const NAV_ITEMS = [
+  { to: '/', label: 'Overview', icon: 'overview' },
+  { to: '/datasets', label: 'Datasets', icon: 'datasets', admin: true },
+  { to: '/transactions', label: 'Transactions', icon: 'transactions' },
+  { to: '/control', label: 'ML Control', icon: 'control' },
+  { to: '/anomalies', label: 'Anomaly Explorer', icon: 'anomalies' },
+  { to: '/investigation', label: 'Investigation', icon: 'investigation' },
+  { to: '/analytics', label: 'Visual Analytics', icon: 'analytics' },
+  { to: '/queue', label: 'Review history', icon: 'queue' },
+  { to: '/admin', label: 'Access & Audit', icon: 'admin', admin: true },
+];

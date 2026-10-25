@@ -1,3 +1,4 @@
+import { PageHeader } from '../components/PageHeader';
 import { useCallback } from 'react';
 
 import { AsyncState } from '../components/AsyncState';
@@ -15,13 +16,11 @@ export default function Analytics() {
   const breakdown = useApi(breakdownFetcher, []);
   return (
     <>
-      <header className="page-heading">
-        <div>
-          <p className="eyebrow">Explainable visual analytics</p>
-          <h1>Visual Analytics</h1>
-          <p>Visuals support investigation; they are not proof of wrongdoing.</p>
-        </div>
-      </header>
+      <PageHeader
+        title="Visual Analytics"
+        description="Visuals support investigation; they are not proof of wrongdoing."
+        eyebrow="Explainable visual analytics"
+      />
       <div className="dashboard-grid">
         <section className="panel span-2">
           <h2>Flagged-count trend</h2>
@@ -29,6 +28,7 @@ export default function Analytics() {
             loading={trend.loading}
             error={trend.error}
             empty={!trend.data?.points?.length}
+            emptyMessage="No anomaly screening results are available yet."
             onRetry={trend.retry}
           >
             <LineChart points={trend.data?.points || []} />
@@ -40,6 +40,7 @@ export default function Analytics() {
             loading={breakdown.loading}
             error={breakdown.error}
             empty={!breakdown.data?.items?.length}
+            emptyMessage="No agency breakdown is available yet."
             onRetry={breakdown.retry}
           >
             <div className="bar-list">
@@ -48,7 +49,11 @@ export default function Analytics() {
                   <span>{item.name}</span>
                   <strong>{item.count}</strong>
                   <div className="bar-track">
-                    <span style={{ width: `${Math.min(100, item.count * 4)}%` }} />
+                    <span
+                      style={{
+                        width: `${Math.min(100, (item.count / Math.max(1, ...breakdown.data.items.map((entry) => entry.count))) * 100)}%`,
+                      }}
+                    />
                   </div>
                 </div>
               ))}

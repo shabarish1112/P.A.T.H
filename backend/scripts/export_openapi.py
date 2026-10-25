@@ -17,7 +17,7 @@ def main() -> None:
 
     destination = Path(__file__).resolve().parents[2] / 'docs' / 'openapi.json'
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(app.openapi(), indent=2), encoding='utf-8')
+    destination.write_text(json.dumps(app.openapi(), indent=2), encoding='utf-8', newline='\n')
     print(destination)
 
 

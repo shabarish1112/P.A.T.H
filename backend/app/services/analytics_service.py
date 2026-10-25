@@ -43,7 +43,7 @@ class AnalyticsService:
         self.settings = settings
 
     def summary(self) -> SummaryResponse:
-        run_id = self.settings_repo.get('active_run_id')
+        run_id = self.settings_repo.active_run_id()
         dataset_id = self.settings_repo.get('active_dataset_id')
         cache_key = f'analytics:summary:{run_id}:{dataset_id}'
         cached = self.cache.get(cache_key)
@@ -76,7 +76,7 @@ class AnalyticsService:
         return response
 
     def trend(self) -> TrendResponse:
-        run_id = self.settings_repo.get('active_run_id')
+        run_id = self.settings_repo.active_run_id()
         if not run_id:
             return TrendResponse(points=[], current_run_id=None, previous_run_id=None)
         current = self.models.get_run(run_id)
@@ -98,7 +98,7 @@ class AnalyticsService:
         )
 
     def breakdown(self, field: str, limit: int) -> list[AnalyticsBreakdownItem]:
-        run_id = self.settings_repo.get('active_run_id')
+        run_id = self.settings_repo.active_run_id()
         if not run_id:
             return []
         return [

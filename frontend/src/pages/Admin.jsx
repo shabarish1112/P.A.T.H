@@ -1,5 +1,7 @@
+import { PageHeader } from '../components/PageHeader';
 import { useCallback, useState } from 'react';
 
+import { Badge } from '../components/Badge';
 import { AsyncState } from '../components/AsyncState';
 import { DataTable } from '../components/DataTable';
 import { useToast } from '../contexts/ToastContext';
@@ -10,6 +12,7 @@ export default function Admin() {
   const { push } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
   const [role, setRole] = useState('analyst');
   const usersFetcher = useCallback((signal) => api.get('/api/users', { signal }), []);
   const auditFetcher = useCallback((signal) => api.get('/api/audit?limit=100', { signal }), []);
@@ -18,6 +21,8 @@ export default function Admin() {
 
   async function createUser(event) {
     event.preventDefault();
+    if (busy) return;
+    setBusy(true);
     try {
       await api.post('/api/users', { email, password, role });
       setEmail('');
@@ -27,19 +32,19 @@ export default function Admin() {
       audit.retry();
     } catch (error) {
       push(error.message, 'error');
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
     <>
-      <header className="page-heading">
-        <div>
-          <p className="eyebrow">Administration</p>
-          <h1>Access & Audit</h1>
-          <p>Administrative identity management and immutable security/investigation events.</p>
-        </div>
-      </header>
-      <div className="dashboard-grid">
+      <PageHeader
+        title="Access & Audit"
+        description="Manage workspace access and inspect recorded security and review events."
+        eyebrow="Administration"
+      />
+      <div className="dashboard-grid admin-grid">
         <section className="panel">
           <h2>Create user</h2>
           <form className="review-form" onSubmit={createUser}>
@@ -64,23 +69,31 @@ export default function Admin() {
             </label>
             <label>
               Role
-              <select value={role} onChange={(event) => setRole(event.target.value)}>
+              <select
+                aria-label="Role"
+                value={role}
+                onChange={(event) => setRole(event.target.value)}
+              >
                 <option value="analyst">analyst</option>
                 <option value="reviewer">reviewer</option>
                 <option value="admin">admin</option>
               </select>
             </label>
-            <button className="button primary" type="submit">
-              Create user
+            <button className="button primary" type="submit" disabled={busy}>
+              {busy ? 'Creating…' : 'Create user'}
             </button>
           </form>
         </section>
         <section className="panel">
-          <h2>Users</h2>
+          <h2>User management</h2>
+          <p className="panel-description">
+            Provisioned accounts and their current workspace access.
+          </p>
           <AsyncState
             loading={users.loading}
             error={users.error}
             empty={!users.data?.items?.length}
+            emptyMessage="No user accounts are available."
             onRetry={users.retry}
           >
             <DataTable
@@ -90,7 +103,11 @@ export default function Admin() {
                 {
                   key: 'is_active',
                   label: 'Active',
-                  render: (row) => (row.is_active ? 'Yes' : 'No'),
+                  render: (row) => (
+                    <Badge tone={row.is_active ? 'success' : 'muted'}>
+                      {row.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  ),
                 },
               ]}
               rows={users.data?.items || []}
@@ -99,12 +116,14 @@ export default function Admin() {
           </AsyncState>
         </section>
       </div>
-      <section className="panel">
+      <section className="panel panel-secondary">
         <h2>Audit log</h2>
+        <p className="panel-description">Read-only security and investigation events.</p>
         <AsyncState
           loading={audit.loading}
           error={audit.error}
           empty={!audit.data?.items?.length}
+          emptyMessage="No audit events have been recorded."
           onRetry={audit.retry}
         >
           <DataTable

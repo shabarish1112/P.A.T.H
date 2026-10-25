@@ -19,7 +19,7 @@ class ReviewService:
         self.cache = cache
 
     def create(self, transaction_id: str, body: ReviewBody, actor: AuthUser) -> ReviewResponse:
-        run_id = self.settings_repo.get('active_run_id')
+        run_id = self.settings_repo.active_run_id()
         if not run_id:
             raise HTTPException(status_code=409, detail='No active model run')
         latest = self.repo.latest(run_id, transaction_id)
@@ -61,7 +61,7 @@ class ReviewService:
         )
 
     def list(self, limit: int) -> list[ReviewResponse]:
-        run_id = self.settings_repo.get('active_run_id')
+        run_id = self.settings_repo.active_run_id()
         if not run_id:
             return []
         return [

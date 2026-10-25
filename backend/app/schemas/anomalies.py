@@ -3,9 +3,11 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from app.schemas.enums import RiskLevel
+from app.schemas.explanations import PaymentExplanation
 
 
 class AnomalyResponse(BaseModel):
+    explanation: PaymentExplanation | None = None
     id: str
     run_id: str
     transaction_id: str

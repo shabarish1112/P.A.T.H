@@ -8,7 +8,11 @@ vi.mock('../src/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { role: 'admin' } }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  delete document.documentElement.dataset.theme;
+});
 
 function mount(mobileOpen = false) {
   const onMobileClose = vi.fn();
@@ -21,41 +25,30 @@ function mount(mobileOpen = false) {
   return { sidebar: screen.getByLabelText('Primary navigation'), onMobileClose };
 }
 
-describe('automatic sidebar', () => {
-  it('expands on pointer entry and collapses when the pointer leaves', () => {
+describe('fixed navigation rail', () => {
+  it('switches the document theme and persists the preference', () => {
     const { sidebar } = mount();
-    expect(sidebar).toHaveClass('collapsed');
-    expect(screen.getByRole('link', { name: 'Datasets' })).toBeInTheDocument();
-    fireEvent.pointerEnter(sidebar, { pointerType: 'mouse' });
-    expect(sidebar).not.toHaveClass('collapsed');
-    fireEvent.pointerLeave(sidebar);
-    expect(sidebar).toHaveClass('collapsed');
+    const toggle = screen.getByRole('switch', { name: 'Dark mode' });
+    expect(sidebar).not.toContainElement(toggle);
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(toggle);
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('path-theme')).toBe('dark');
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('keeps navigation expanded while keyboard focus stays inside', () => {
+  it('keeps a fixed icon rail on pointer and keyboard activity', () => {
     const { sidebar } = mount();
-    const link = screen.getByRole('link', { name: 'Overview' });
-    const nextLink = screen.getByRole('link', { name: 'Datasets' });
-    fireEvent.focus(link);
-    fireEvent.pointerLeave(sidebar);
-    expect(sidebar).not.toHaveClass('collapsed');
-    fireEvent.blur(link, { relatedTarget: nextLink });
-    expect(sidebar).not.toHaveClass('collapsed');
-    fireEvent.blur(nextLink, { relatedTarget: screen.getByText('Page action') });
     expect(sidebar).toHaveClass('collapsed');
-  });
-
-  it('collapses after clicking a navigation link and moving the pointer away', () => {
-    const { sidebar } = mount();
+    expect(screen.queryByText('Workspace')).not.toBeInTheDocument();
     const link = screen.getByRole('link', { name: 'Datasets' });
+    expect(link).toHaveAttribute('title', 'Datasets');
     fireEvent.pointerEnter(sidebar, { pointerType: 'mouse' });
-    fireEvent.pointerDown(link, { pointerType: 'mouse' });
     fireEvent.focus(link);
-    fireEvent.click(link);
+    fireEvent.keyDown(link, { key: 'Tab' });
+    expect(sidebar).toHaveClass('collapsed');
     fireEvent.pointerLeave(sidebar);
     expect(sidebar).toHaveClass('collapsed');
-    fireEvent.keyDown(link, { key: 'Tab' });
-    expect(sidebar).not.toHaveClass('collapsed');
   });
 
   it('shows full labels in the mobile drawer and closes it after navigation', () => {
