@@ -7,7 +7,7 @@ ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.29.2-alpine@sha256:031d8c8ab79d2d171a2a383aa50a06f527791c05ba1aeae9ca05d7b9779caf8e
+FROM nginxinc/nginx-unprivileged:1.31.7-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
