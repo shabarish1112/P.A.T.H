@@ -1,6 +1,4 @@
-# P.A.T.H.
-
-**Public Anomaly Tracking Hub**
+# P.A.T.H. - Public Anomaly Tracking Hub
 
 P.A.T.H. is a research-grade anomaly-screening platform for public-fund disbursals. It sits **above** authoritative public financial management systems such as PFMS; it does not replace them and does not make legal, disciplinary, accounting, or fraud findings.
 
