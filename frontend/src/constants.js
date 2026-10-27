@@ -15,7 +15,7 @@ export const ROLE_CAPABILITIES = {
 };
 
 export const NAV_ITEMS = [
-  { to: '/', label: 'Overview', icon: 'overview' },
+  { to: '/workspace', label: 'Overview', icon: 'overview' },
   { to: '/datasets', label: 'Datasets', icon: 'datasets', admin: true },
   { to: '/transactions', label: 'Transactions', icon: 'transactions' },
   { to: '/control', label: 'ML Control', icon: 'control' },

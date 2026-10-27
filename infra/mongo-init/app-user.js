@@ -1,5 +1,5 @@
 const database = db.getSiblingDB('path');
-const collections = ['transactions', 'anomalies', 'reviews', 'refresh_tokens', 'users',
+const collections = ['public_analyses', 'transactions', 'anomalies', 'reviews', 'refresh_tokens', 'users',
   'datasets', 'model_runs', 'jobs', 'settings', 'login_attempts', 'locks'];
 if (!database.getCollectionNames().includes('audit_logs')) {
   database.createCollection('audit_logs', { validator: { $jsonSchema: {

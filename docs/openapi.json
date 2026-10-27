@@ -69,6 +69,47 @@
         }
       }
     },
+    "/api/auth/signup": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Signup",
+        "operationId": "signup_api_auth_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -340,6 +381,131 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      }
+    },
+    "/api/public/limits": {
+      "get": {
+        "tags": [
+          "Public analysis"
+        ],
+        "summary": "Limits",
+        "operationId": "limits_api_public_limits_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object",
+                  "title": "Response Limits Api Public Limits Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/analyze": {
+      "post": {
+        "tags": [
+          "Public analysis"
+        ],
+        "summary": "Analyze",
+        "operationId": "analyze_api_public_analyze_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ModelName",
+              "default": "if"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_api_public_analyze_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/analyses/{analysis_id}": {
+      "get": {
+        "tags": [
+          "Public analysis"
+        ],
+        "summary": "Result",
+        "operationId": "result_api_public_analyses__analysis_id__get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{32}$",
+              "title": "Analysis Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/users": {
@@ -1915,6 +2081,20 @@
         ],
         "title": "AuthUser"
       },
+      "Body_analyze_api_public_analyze_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_analyze_api_public_analyze_post"
+      },
       "Body_login_api_auth_login_post": {
         "properties": {
           "grant_type": {
@@ -2412,6 +2592,102 @@
         ],
         "title": "PaymentExplanation"
       },
+      "PublicAlert": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "transaction_id": {
+            "type": "string",
+            "title": "Transaction Id"
+          },
+          "agency": {
+            "type": "string",
+            "title": "Agency"
+          },
+          "vendor": {
+            "type": "string",
+            "title": "Vendor"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/RiskLevel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "transaction_id",
+          "agency",
+          "vendor",
+          "amount_paise",
+          "score",
+          "risk"
+        ],
+        "title": "PublicAlert"
+      },
+      "PublicResult": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "title": "Analysis Id"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelName"
+          },
+          "rows_received": {
+            "type": "integer",
+            "title": "Rows Received"
+          },
+          "rows_accepted": {
+            "type": "integer",
+            "title": "Rows Accepted"
+          },
+          "rows_rejected": {
+            "type": "integer",
+            "title": "Rows Rejected"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/PublicAlert"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "model",
+          "rows_received",
+          "rows_accepted",
+          "rows_rejected",
+          "issues",
+          "alerts",
+          "expires_at"
+        ],
+        "title": "PublicResult"
+      },
       "RefreshResponse": {
         "properties": {
           "access_token": {
@@ -2546,6 +2822,7 @@
       "Role": {
         "type": "string",
         "enum": [
+          "member",
           "analyst",
           "reviewer",
           "admin"
@@ -2660,6 +2937,28 @@
           "help_text"
         ],
         "title": "SignalEvidence"
+      },
+      "SignupRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "SignupRequest"
       },
       "SummaryResponse": {
         "properties": {

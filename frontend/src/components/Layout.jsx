@@ -90,6 +90,9 @@ export function Layout() {
               <strong>{user?.email}</strong>
               <span>{user?.role}</span>
             </div>
+            <NavLink to="/" className="button ghost">
+              Public analysis
+            </NavLink>
             <button type="button" className="button ghost" onClick={logout}>
               Logout
             </button>

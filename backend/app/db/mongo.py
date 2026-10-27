@@ -112,7 +112,7 @@ def initialize_database(db: Database[Any] | None = None) -> None:
         'bsonType': 'object',
         'required': ['email', 'password_hash', 'role', 'is_active', 'created_at'],
         'properties': {
-            'role': {'enum': ['analyst', 'reviewer', 'admin']},
+            'role': {'enum': ['member', 'analyst', 'reviewer', 'admin']},
             'is_active': {'bsonType': 'bool'},
             'created_at': {'bsonType': 'date'},
         },
@@ -155,6 +155,7 @@ def initialize_database(db: Database[Any] | None = None) -> None:
         },
     }
     for name, schema in (
+        ('public_analyses', {'bsonType': 'object', 'required': ['session_id', 'expire_at', 'result']}),
         ('transactions', transaction_schema),
         ('anomalies', anomaly_schema),
         ('reviews', review_schema),
@@ -169,6 +170,8 @@ def initialize_database(db: Database[Any] | None = None) -> None:
     ):
         _ensure_collection_validator(database, name, schema)
 
+    database.public_analyses.create_index([('expire_at', ASCENDING)], expireAfterSeconds=0)
+    database.public_analyses.create_index([('user_id', ASCENDING), ('created_at', DESCENDING)])
     database.users.create_index([('email', ASCENDING)], unique=True)
     database.refresh_tokens.create_index([('token_hash', ASCENDING)], unique=True)
     database.refresh_tokens.create_index([('expires_at', ASCENDING)], expireAfterSeconds=0)

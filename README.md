@@ -4,6 +4,14 @@ P.A.T.H. is a research-grade anomaly-screening platform for public-fund disbursa
 
 > **Core principle: Unusual != Fraudulent.** A model score is a screening signal for authorized human review.
 
+## Public use and optional accounts
+
+Open `/` to upload a CSV, run a screening model and download temporary results
+without an account. Use `/signup` or `/login` for an optional member account.
+Staff use `/workspace`; existing staff permissions remain enforced. See
+[public access architecture and deployment](docs/PUBLIC_ACCESS.md) for isolation,
+retention, free-plan limits and MongoDB migration requirements.
+
 ## Prerequisites
 
 - Python **3.14.x**
@@ -100,6 +108,7 @@ an authenticated password change at next login.
 
 ## Roles
 
+- `member`: optional self-service account; public analysis only, no staff workspace access.
 - `analyst`: read transactions/anomalies/analytics; run models.
 - `reviewer`: analyst capabilities plus review decisions.
 - `admin`: reviewer capabilities plus dataset mutation, users, and audit logs.

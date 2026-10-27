@@ -56,6 +56,13 @@ export function AuthProvider({ children }) {
     return me.user;
   }, []);
 
+  const register = useCallback(async (email, password) => {
+    const data = await api.post('/api/auth/signup', { email, password });
+    setAccessToken(data.access_token);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       const refreshed = await api.post('/api/auth/refresh', null);
@@ -69,8 +76,8 @@ export function AuthProvider({ children }) {
   }, [clearSession]);
 
   const value = useMemo(
-    () => ({ user, loading, authenticated: Boolean(user), login, logout, clearSession }),
-    [user, loading, login, logout, clearSession],
+    () => ({ user, loading, authenticated: Boolean(user), login, register, logout, clearSession }),
+    [user, loading, login, register, logout, clearSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

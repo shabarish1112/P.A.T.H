@@ -16,7 +16,18 @@ from app.core.errors import http_exception_handler, unhandled_exception_handler,
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
 from app.db.mongo import apply_retention, initialize_database, ping_database
-from app.routes import analytics, anomalies, audit, auth, datasets, models, reviews, transactions, users
+from app.routes import (
+    analytics,
+    anomalies,
+    audit,
+    auth,
+    datasets,
+    models,
+    public,
+    reviews,
+    transactions,
+    users,
+)
 from app.schemas.common import MessageResponse
 
 
@@ -62,7 +73,11 @@ class PathAPI(FastAPI):
             '429': {'description': 'Rate limit exceeded'},
         }
         for path, methods in schema.get('paths', {}).items():
-            if path.startswith('/health') or path in {'/api/auth/login', '/api/auth/refresh'}:
+            if path.startswith(('/health', '/api/public/')) or path in {
+                '/api/auth/login',
+                '/api/auth/refresh',
+                '/api/auth/signup',
+            }:
                 continue
             for operation in methods.values():
                 if isinstance(operation, dict) and 'responses' in operation:
@@ -118,6 +133,7 @@ def health_ready() -> MessageResponse:
 
 for router in (
     auth.router,
+    public.router,
     users.router,
     datasets.router,
     transactions.router,
