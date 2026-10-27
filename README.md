@@ -1,5 +1,9 @@
 # P.A.T.H. - Public Anomaly Tracking Hub
 
+**Live website:** [Open P.A.T.H.](https://path-lilac.vercel.app)
+
+Use this permanent address to access the application. Sign in with your P.A.T.H. account; a Vercel account is not required.
+
 P.A.T.H. is a research-grade anomaly-screening platform for public-fund disbursals. It sits **above** authoritative public financial management systems such as PFMS; it does not replace them and does not make legal, disciplinary, accounting, or fraud findings.
 
 > **Core principle: Unusual != Fraudulent.** A model score is a screening signal for authorized human review.
