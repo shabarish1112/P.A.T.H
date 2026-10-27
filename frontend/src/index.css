@@ -1755,3 +1755,138 @@ textarea:disabled {
     grid-column: auto;
   }
 }
+
+/* PATH glass surfaces: navigation chrome and sign-in only. */
+:root {
+  --glass-surface: rgb(255 255 255 / 64%);
+  --glass-border: rgb(93 108 131 / 19%);
+  --glass-highlight: rgb(255 255 255 / 90%);
+  --glass-shadow: 0 8px 28px rgb(31 45 67 / 8%), inset 0 1px 0 var(--glass-highlight);
+  --glass-input: rgb(255 255 255 / 56%);
+  --glass-login: rgb(255 255 255 / 70%);
+  --login-image-overlay: rgb(243 246 250 / 40%);
+  --glass-warm-glow: rgb(239 119 93 / 17%);
+  --glass-cool-glow: rgb(104 161 183 / 14%);
+}
+:root[data-theme='dark'] {
+  --glass-surface: rgb(27 33 43 / 58%);
+  --glass-border: rgb(196 215 238 / 17%);
+  --glass-highlight: rgb(231 242 255 / 14%);
+  --glass-shadow: 0 10px 32px rgb(0 0 0 / 22%), inset 0 1px 0 var(--glass-highlight);
+  --glass-input: rgb(15 20 28 / 42%);
+  --glass-login: rgb(24 30 40 / 72%);
+  --login-image-overlay: rgb(8 13 21 / 45%);
+  --glass-warm-glow: rgb(239 119 93 / 18%);
+  --glass-cool-glow: rgb(104 161 183 / 14%);
+}
+.topbar {
+  isolation: isolate;
+}
+.topbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 17% 0%, var(--glass-warm-glow), transparent 48%),
+    radial-gradient(ellipse at 80% 0%, var(--glass-cool-glow), transparent 55%);
+}
+.top-card,
+.sidebar,
+.theme-floating,
+.login-panel {
+  background:
+    linear-gradient(135deg, var(--glass-highlight), transparent 38%), var(--glass-surface);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+}
+.top-card {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.logo-card:hover,
+.top-card:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--glass-border));
+}
+.theme-floating button {
+  background: transparent;
+}
+.theme-floating .switch-track {
+  background: color-mix(in srgb, var(--glass-input) 74%, var(--muted));
+  box-shadow: inset 0 1px 4px rgb(0 0 0 / 12%);
+}
+.page-link.active,
+.sidebar .nav-item.active {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 10%),
+    0 2px 8px rgb(0 0 0 / 10%);
+}
+.login-shell {
+  isolation: isolate;
+  background-color: var(--page);
+  background-image:
+    radial-gradient(ellipse at 26% 22%, var(--glass-warm-glow), transparent 52%),
+    radial-gradient(ellipse at 78% 78%, var(--glass-cool-glow), transparent 52%),
+    linear-gradient(var(--login-image-overlay), var(--login-image-overlay)),
+    var(--login-background-image, none);
+  background-position: center;
+  background-size: cover;
+}
+.login-panel {
+  background: linear-gradient(135deg, var(--glass-highlight), transparent 46%), var(--glass-login);
+  box-shadow:
+    0 24px 72px rgb(0 0 0 / 18%),
+    inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+  backdrop-filter: blur(24px) saturate(125%);
+}
+.login-form input {
+  background: var(--glass-input);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 4%);
+}
+.login-form input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .top-card,
+  .sidebar,
+  .theme-floating,
+  .login-panel {
+    background: var(--panel);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .top-card,
+  .sidebar,
+  .theme-floating,
+  .login-panel {
+    background: var(--panel);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .login-form input {
+    background: var(--panel2);
+  }
+}
+@media (forced-colors: active) {
+  .top-card,
+  .sidebar,
+  .theme-floating,
+  .login-panel {
+    background: Canvas;
+    border-color: CanvasText;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .topbar::before {
+    display: none;
+  }
+}

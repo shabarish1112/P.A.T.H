@@ -7,6 +7,11 @@ export default function Login() {
   const { authenticated, loading, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const imagePath = import.meta.env.VITE_LOGIN_BACKGROUND_IMAGE || '';
+  // Local image assets keep the photo compatible with the site's security policy.
+  const image = /^\/(?!\/)[a-z0-9/_-]+\.(?:avif|webp|png|jpe?g)$/i.test(imagePath)
+    ? imagePath
+    : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +34,10 @@ export default function Login() {
   }
 
   return (
-    <main className="login-shell">
+    <main
+      className="login-shell"
+      style={image ? { '--login-background-image': `url("${image}")` } : undefined}
+    >
       <section className="login-story" aria-label="P.A.T.H. product principle">
         <div className="login-brand">
           <span className="brand-mark" /> P.A.T.H.
