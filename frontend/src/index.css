@@ -1529,7 +1529,7 @@ textarea:disabled {
   gap: 4px;
 }
 .analysis-summary {
-  border-top: 3px solid var(--accent);
+  border-top: 1px solid var(--line);
 }
 .analysis-summary h3 {
   font-size: 14px;
