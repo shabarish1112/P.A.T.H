@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, status
-from pymongo.errors import DuplicateKeyError
 
 from app.core.config import Settings
 from app.core.security import (
@@ -16,9 +15,8 @@ from app.core.security import (
 )
 from app.repositories.audit import AuditRepository
 from app.repositories.auth import AuthRepository
-from app.repositories.public import PublicRepository
 from app.repositories.users import UserRepository
-from app.schemas.auth import AuthUser, LoginRequest, PasswordChange, SignupRequest, TokenResponse
+from app.schemas.auth import AuthUser, LoginRequest, PasswordChange, TokenResponse
 from app.schemas.enums import Role
 
 
@@ -27,19 +25,6 @@ class AuthService:
         self.users = users
         self.auth = auth
         self.settings = settings
-
-    def register(self, body: SignupRequest, request: Request) -> tuple[TokenResponse, str, datetime]:
-        PublicRepository(self.users.db).consume_limit(
-            'signup',
-            request.client.host if request.client else 'unknown',
-            self.settings.jwt_secret,
-            10,
-        )
-        try:
-            self.users.create(str(body.email), hash_password(body.password), Role.member.value)
-        except DuplicateKeyError as exc:
-            raise HTTPException(409, 'Unable to create account. Try signing in instead.') from exc
-        return self.login(LoginRequest(email=body.email, password=body.password), request)
 
     def _login_key(self, email: str, ip: str) -> str:
         return f'{email.lower()}|{ip}'

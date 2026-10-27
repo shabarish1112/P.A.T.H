@@ -158,7 +158,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-function mount(path = '/workspace') {
+function mount(path = '/') {
   return render(
     <StrictMode>
       <MemoryRouter initialEntries={[path]}>
@@ -184,9 +184,7 @@ async function open(label) {
 describe('real application flows with mocked HTTP boundaries', () => {
   it('restores once under StrictMode and navigates through populated analytics views', async () => {
     mount();
-    await waitFor(() => expect(screen.getAllByText('+100.00% vs previous run')).toHaveLength(4), {
-      timeout: 3000,
-    });
+    await waitFor(() => expect(screen.getAllByText('+100.00% vs previous run')).toHaveLength(4));
     expect(refreshCalls).toBe(1);
     await open('Visual Analytics');
     expect(await screen.findByText('Health')).toBeInTheDocument();

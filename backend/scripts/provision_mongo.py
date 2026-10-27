@@ -10,7 +10,6 @@ def provision_database(database: Database, username: str, password: str) -> None
     database.audit_logs.create_index([('created_at', -1)])
     database.audit_logs.create_index([('expire_at', 1)], expireAfterSeconds=0)
     collections = (
-        'public_analyses',
         'transactions',
         'anomalies',
         'reviews',

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.enums import Role
 
@@ -10,12 +10,6 @@ from app.schemas.enums import Role
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-
-
-class SignupRequest(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-    email: EmailStr
-    password: str = Field(min_length=12, max_length=128)
 
 
 class AuthUser(BaseModel):

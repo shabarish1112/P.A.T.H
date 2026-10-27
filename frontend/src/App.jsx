@@ -11,7 +11,6 @@ import Dashboard from './pages/Dashboard';
 import Datasets from './pages/Datasets';
 import Investigation from './pages/Investigation';
 import Login from './pages/Login';
-import PublicAnalysis from './pages/PublicAnalysis';
 import ChangePassword from './pages/ChangePassword';
 import Queue from './pages/Queue';
 import Transactions from './pages/Transactions';
@@ -25,26 +24,21 @@ function ProtectedRoute() {
   if (auth.user?.must_change_password && location.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
   }
-  if (auth.user?.role === 'member' && location.pathname !== '/change-password')
-    return <Navigate to="/" replace />;
   return <Layout />;
 }
 
 function AdminRoute() {
   const auth = useAuth();
-  if (auth.user?.role !== 'admin') return <Navigate to="/workspace" replace />;
+  if (auth.user?.role !== 'admin') return <Navigate to="/" replace />;
   return <Admin />;
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<PublicAnalysis />} />
-      <Route path="/results/:analysisId" element={<PublicAnalysis />} />
-      <Route path="/signup" element={<Login signup />} />
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedRoute />}>
-        <Route path="workspace" element={<Dashboard />} />
+        <Route index element={<Dashboard />} />
         <Route path="change-password" element={<ChangePassword />} />
         <Route path="datasets" element={<Datasets />} />
         <Route path="transactions" element={<Transactions />} />

@@ -14,7 +14,6 @@ from app.schemas.auth import (
     MeResponse,
     PasswordChange,
     RefreshResponse,
-    SignupRequest,
     TokenResponse,
 )
 from app.schemas.common import MessageResponse
@@ -36,20 +35,6 @@ def _set_refresh_cookie(response: Response, token: str, settings: Settings) -> N
         max_age=settings.refresh_token_days * 24 * 60 * 60,
         path='/api/auth',
     )
-
-
-@router.post('/signup', response_model=TokenResponse, status_code=201)
-def signup(
-    body: SignupRequest,
-    request: Request,
-    response: Response,
-    service: Annotated[AuthService, Depends(get_auth_service)],
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> TokenResponse:
-    tokens, refresh_token, _ = service.register(body, request)
-    _set_refresh_cookie(response, refresh_token, settings)
-    response.headers['Cache-Control'] = 'no-store'
-    return tokens
 
 
 @router.post(

@@ -23,9 +23,7 @@ async def http_exception_handler(request: Request, exc: Exception) -> JSONRespon
         return await unhandled_exception_handler(request, exc)
     code = f'HTTP_{exc.status_code}'
     return JSONResponse(
-        status_code=exc.status_code,
-        content=error_payload(code, str(exc.detail), _request_id(request)),
-        headers=exc.headers,
+        status_code=exc.status_code, content=error_payload(code, str(exc.detail), _request_id(request))
     )
 
 
