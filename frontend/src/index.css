@@ -1779,19 +1779,6 @@ textarea:disabled {
   --glass-warm-glow: rgb(239 119 93 / 18%);
   --glass-cool-glow: rgb(104 161 183 / 14%);
 }
-.topbar {
-  isolation: isolate;
-}
-.topbar::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 17% 0%, var(--glass-warm-glow), transparent 48%),
-    radial-gradient(ellipse at 80% 0%, var(--glass-cool-glow), transparent 55%);
-}
 .top-card,
 .sidebar,
 .theme-floating,
@@ -1885,8 +1872,5 @@ textarea:disabled {
     box-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-  }
-  .topbar::before {
-    display: none;
   }
 }
